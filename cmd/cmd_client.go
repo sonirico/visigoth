@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/sonirico/visigoth/internal/client"
+	"github.com/sonirico/visigoth/pkg/client"
 	"log"
 	"os"
 	"runtime"

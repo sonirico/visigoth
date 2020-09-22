@@ -1,4 +1,4 @@
-package internal
+package entities
 
 type MimeType byte
 

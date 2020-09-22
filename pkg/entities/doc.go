@@ -1,4 +1,4 @@
-package internal
+package entities
 
 type Doc struct {
 	Name    string `json:"id"`

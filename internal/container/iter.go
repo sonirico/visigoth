@@ -1,22 +1,22 @@
 package container
 
 import (
-	"github.com/sonirico/visigoth/internal"
+	"github.com/sonirico/visigoth/pkg/entities"
 )
 
 type ResultIterator struct {
-	res     internal.Result
+	res     entities.Result
 	counter int
 }
 
-func NewResultIterator(res internal.Result) *ResultIterator {
+func NewResultIterator(res entities.Result) *ResultIterator {
 	return &ResultIterator{
 		res:     res,
 		counter: -1,
 	}
 }
 
-func (ri *ResultIterator) Next() (item internal.Row, done bool) {
+func (ri *ResultIterator) Next() (item entities.Row, done bool) {
 	ri.counter++
 	return ri.res.Get(ri.counter), ri.counter >= ri.res.Len()-1
 }

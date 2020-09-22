@@ -1,8 +1,8 @@
 package search
 
 import (
-	"github.com/sonirico/visigoth/internal"
 	"github.com/sonirico/visigoth/internal/container"
+	"github.com/sonirico/visigoth/pkg/entities"
 	"sort"
 	"sync"
 )
@@ -23,7 +23,7 @@ func newDocSet() *docSet {
 	}
 }
 
-func (d *docSet) check(key internal.HashKey) (*info, bool) {
+func (d *docSet) check(key entities.HashKey) (*info, bool) {
 	inter, ok := d.set.Load(key)
 	if ok {
 		info := inter.(*info)
@@ -33,13 +33,13 @@ func (d *docSet) check(key internal.HashKey) (*info, bool) {
 	return nil, false
 }
 
-func (d *docSet) store(key internal.HashKey, info *info) {
+func (d *docSet) store(key entities.HashKey, info *info) {
 	d.set.Store(key, info)
 }
 
 // SmartHitsSearchEngine will either use concurrent search or sequential search based on
 // token amount
-func SmartHitsSearchEngine(tokens [][]byte, indexable Indexer) internal.Iterator {
+func SmartHitsSearchEngine(tokens [][]byte, indexable Indexer) entities.Iterator {
 	// TODO: test benchmark
 	if len(tokens) < triggerSmartSearchThreshold {
 		return HitsSearchEngine(tokens, indexable)

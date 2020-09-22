@@ -1,4 +1,4 @@
-package internal
+package entities
 
 type Serializer interface {
 	Serialize(item Row) []byte

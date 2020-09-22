@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/sonirico/visigoth/pkg/entities"
 	"log"
 	"net/http"
 	"strings"
 
-	"github.com/sonirico/visigoth/internal"
 	"github.com/sonirico/visigoth/internal/repos"
 	"github.com/sonirico/visigoth/internal/server"
 )
@@ -51,7 +51,7 @@ func main() {
 	go func() {
 		log.Println("indexing debug documents...")
 		data, _ := json.Marshal(&healthIndex{Ok: true})
-		repo.Put("__health__", internal.NewDocRequest("health", string(data)))
+		repo.Put("__health__", entities.NewDocRequest("health", string(data)))
 	}()
 
 	go func() {

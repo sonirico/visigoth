@@ -3,9 +3,9 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/sonirico/visigoth/internal"
 	"github.com/sonirico/visigoth/internal/repos"
 	"github.com/sonirico/visigoth/internal/search"
+	"github.com/sonirico/visigoth/pkg/entities"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -192,7 +192,7 @@ func (s *httpServer) handleIndex(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusAccepted)
-		docRequest := internal.NewDocRequest(payload.Doc, payload.Terms)
+		docRequest := entities.NewDocRequest(payload.Doc, payload.Terms)
 		s.repo.Put(iname, docRequest)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)

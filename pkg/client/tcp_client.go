@@ -3,8 +3,8 @@ package client
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/sonirico/visigoth/internal"
 	"github.com/sonirico/visigoth/internal/search"
+	"github.com/sonirico/visigoth/pkg/entities"
 	"github.com/sonirico/visigoth/pkg/vtp"
 	"io"
 	"log"
@@ -103,7 +103,7 @@ func (c *TCPClient) UnAlias(alias string, cb Callback) {
 	}
 }
 
-func (c *TCPClient) Index(index, name, payload string, format internal.MimeType, cb Callback) {
+func (c *TCPClient) Index(index, name, payload string, format entities.MimeType, cb Callback) {
 	msg := vtp.NewIndexRequest(c.counter.Inc(), Version, index, name, payload, format)
 	c.requests <- msg
 	if cb != nil {

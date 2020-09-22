@@ -2,18 +2,18 @@ package search
 
 import (
 	"encoding/json"
-	"github.com/sonirico/visigoth/internal"
+	"github.com/sonirico/visigoth/pkg/entities"
 	"log"
 )
 
 type hitsSearchRowSchema struct {
-	Doc  internal.Doc `json:"doc"`
+	Doc  entities.Doc `json:"doc"`
 	Hits int          `json:"hits"`
 }
 
 type jsonHitsSearchResultSerializer struct{}
 
-func (j *jsonHitsSearchResultSerializer) Serialize(item internal.Row) []byte {
+func (j *jsonHitsSearchResultSerializer) Serialize(item entities.Row) []byte {
 	row, ok := item.(HitsSearchRow)
 	if !ok {
 		log.Fatal("unexpected type cannot be serialized. want 'hitsSearchRow', have %V", row)

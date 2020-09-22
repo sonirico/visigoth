@@ -3,10 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/sonirico/visigoth/pkg/entities"
 	"log"
 	"strings"
 
-	"github.com/sonirico/visigoth/internal"
 	"github.com/sonirico/visigoth/internal/repos"
 	"github.com/sonirico/visigoth/internal/server"
 )
@@ -41,9 +41,9 @@ func main() {
 
 	go func() {
 		log.Println("indexing some documents...")
-		repo.Put("cursos", internal.NewDocRequest("/c/马桶/", "curso de programacion python mega guay 马"))
-		repo.Put("cursos", internal.NewDocRequest("/c/java/", "curso de programacion java mega guay"))
-		repo.Put("comics", internal.NewDocRequest("mortadelo & filemon", "hola super intendente"))
+		repo.Put("cursos", entities.NewDocRequest("/c/马桶/", "curso de programacion python mega guay 马"))
+		repo.Put("cursos", entities.NewDocRequest("/c/java/", "curso de programacion java mega guay"))
+		repo.Put("comics", entities.NewDocRequest("mortadelo & filemon", "hola super intendente"))
 	}()
 
 	go func() {

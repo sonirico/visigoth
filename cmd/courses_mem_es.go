@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/sonirico/visigoth/internal"
 	"github.com/sonirico/visigoth/internal/repos"
+	"github.com/sonirico/visigoth/pkg/entities"
 	"log"
 	"net/http"
 
@@ -16,8 +16,8 @@ func main() {
 
 	go func() {
 		log.Println("indexing some documents...")
-		repo.Put("cursos", internal.NewDocRequest("/c/python/", "curso de programacion python mega guay"))
-		repo.Put("cursos", internal.NewDocRequest("/c/java/", "curso de programacion java mega guay"))
+		repo.Put("cursos", entities.NewDocRequest("/c/python/", "curso de programacion python mega guay"))
+		repo.Put("cursos", entities.NewDocRequest("/c/java/", "curso de programacion java mega guay"))
 	}()
 
 	go func() {

@@ -1,8 +1,8 @@
 package index
 
 import (
-	"github.com/sonirico/visigoth/internal"
 	"github.com/sonirico/visigoth/internal/search"
+	"github.com/sonirico/visigoth/pkg/entities"
 	"testing"
 
 	visigoth "github.com/sonirico/visigoth/internal/tokenizer"
@@ -16,30 +16,30 @@ func newTestResultRow(id string) *testResultRow {
 	return &testResultRow{id: id}
 }
 
-func (tr *testResultRow) Doc() internal.Doc {
-	return internal.Doc{Name: tr.id}
+func (tr *testResultRow) Doc() entities.Doc {
+	return entities.Doc{Name: tr.id}
 }
 
-func (tr *testResultRow) Ser(serializer internal.Serializer) []byte {
+func (tr *testResultRow) Ser(serializer entities.Serializer) []byte {
 	return nil
 }
 
 type testSearchResult struct {
-	rows []internal.Row
+	rows []entities.Row
 }
 
 func newTestResult() *testSearchResult {
 	return &testSearchResult{
-		rows: make([]internal.Row, 0),
+		rows: make([]entities.Row, 0),
 	}
 }
 
-func (tr *testSearchResult) Add(row ...internal.Row) internal.Result {
+func (tr *testSearchResult) Add(row ...entities.Row) entities.Result {
 	tr.rows = append(tr.rows, row...)
 	return tr
 }
 
-func (tr *testSearchResult) Get(index int) internal.Row {
+func (tr *testSearchResult) Get(index int) entities.Row {
 	return tr.rows[index]
 }
 
@@ -49,7 +49,7 @@ func (tr *testSearchResult) Len() int {
 
 type testSearch struct {
 	term   string
-	result internal.Result
+	result entities.Result
 	engine search.Engine
 }
 
@@ -57,7 +57,7 @@ func assertSearchReturns(t *testing.T, index Index, tests []testSearch) {
 	for _, test := range tests {
 		ares := index.Search(test.term, test.engine)
 		counter := 0
-		docs := make([]internal.Doc, 0)
+		docs := make([]entities.Doc, 0)
 		for {
 			row, done := ares.Next()
 			if row != nil {
@@ -92,8 +92,8 @@ func assertSearchReturns(t *testing.T, index Index, tests []testSearch) {
 
 func Test_Index_Search_One(t *testing.T) {
 	in := NewMemoryIndex("testing", visigoth.NewSimpleTokenizer())
-	in.Put(internal.NewDocRequest("/course/java", `Curso de programación en Java (León)`))
-	in.Put(internal.NewDocRequest("/course/php", `Curso de programación en PHP (León)`))
+	in.Put(entities.NewDocRequest("/course/java", `Curso de programación en Java (León)`))
+	in.Put(entities.NewDocRequest("/course/php", `Curso de programación en PHP (León)`))
 	tests := []testSearch{
 		{
 			term:   "java",
@@ -107,8 +107,8 @@ func Test_Index_Search_One(t *testing.T) {
 
 func Test_Index_Search_Several(t *testing.T) {
 	in := NewMemoryIndex("testing", visigoth.NewSimpleTokenizer())
-	in.Put(internal.NewDocRequest("/course/java", `Curso de programación en Java (León)`))
-	in.Put(internal.NewDocRequest("/course/php", `Curso de programación en PHP (León)`))
+	in.Put(entities.NewDocRequest("/course/java", `Curso de programación en Java (León)`))
+	in.Put(entities.NewDocRequest("/course/php", `Curso de programación en PHP (León)`))
 	tests := []testSearch{
 		{
 			term:   "java",

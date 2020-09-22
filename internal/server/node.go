@@ -3,10 +3,9 @@ package server
 import (
 	"bytes"
 	"github.com/sonirico/visigoth/internal/loaders"
+	"github.com/sonirico/visigoth/pkg/entities"
 	"log"
 	"strings"
-
-	"github.com/sonirico/visigoth/internal"
 
 	"github.com/sonirico/visigoth/internal/repos"
 	"github.com/sonirico/visigoth/internal/search"
@@ -101,20 +100,20 @@ func (n *node) handleIndexRequest(msg vtp.Message) *vtp.StatusResponse {
 	var statement string
 	in := bytes.NewBufferString(req.Text.Value)
 	out := bytes.NewBuffer(nil)
-	switch internal.MimeType(req.Format.Value) {
-	case internal.MimeJSON:
+	switch entities.MimeType(req.Format.Value) {
+	case entities.MimeJSON:
 		if err := jsonLoader.Load(in, out); err != nil {
 			log.Println(err)
 			return nil
 		}
-	case internal.MimeText:
+	case entities.MimeText:
 		if err := textLoader.Load(in, out); err != nil {
 			log.Println(err)
 			return nil
 		}
 	}
 	statement = out.String()
-	doc := internal.NewDocRequestWith(req.Doc.Value, req.Text.Value, statement)
+	doc := entities.NewDocRequestWith(req.Doc.Value, req.Text.Value, statement)
 	n.repo.Put(req.Index.Value, doc)
 	return &vtp.StatusResponse{Head: vtp.NewHeadResponse(req), Ok: &vtp.ByteType{Value: 1}}
 }

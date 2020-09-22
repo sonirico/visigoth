@@ -3,8 +3,8 @@ package server
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/sonirico/visigoth/internal"
 	"github.com/sonirico/visigoth/internal/repos"
+	"github.com/sonirico/visigoth/pkg/entities"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -21,9 +21,9 @@ func TestIndexHttpServer_ServeHTTP_Search(t *testing.T) {
 	server := NewHttpServer(repo)
 
 	// Set up server state
-	repo.Put("languages", internal.NewDocRequest("rust", "lenguaje con compilador grunon"))
-	repo.Put("languages", internal.NewDocRequest("golang", "lenguaje con ratas azules"))
-	repo.Put("languages", internal.NewDocRequest("nodejs", "lenguaje con node_modules/"))
+	repo.Put("languages", entities.NewDocRequest("rust", "lenguaje con compilador grunon"))
+	repo.Put("languages", entities.NewDocRequest("golang", "lenguaje con ratas azules"))
+	repo.Put("languages", entities.NewDocRequest("nodejs", "lenguaje con node_modules/"))
 
 	tests := []struct {
 		name         string
@@ -131,7 +131,7 @@ func TestIndexHttpServer_ServeHTTP_Index(t *testing.T) {
 			data:         []byte{},
 			expectedCode: http.StatusNotFound,
 			init: func(repo repos.IndexRepo) {
-				repo.Put("fruits", internal.NewDocRequest("香蕉", "西班牙的香蕉是地球上最天天及了"))
+				repo.Put("fruits", entities.NewDocRequest("香蕉", "西班牙的香蕉是地球上最天天及了"))
 			},
 			assert: func(repo repos.IndexRepo) bool {
 				return repo.Has("fruits")
@@ -144,7 +144,7 @@ func TestIndexHttpServer_ServeHTTP_Index(t *testing.T) {
 			data:         []byte{},
 			expectedCode: http.StatusNoContent,
 			init: func(repo repos.IndexRepo) {
-				repo.Put("fruits", internal.NewDocRequest("香蕉", "西班牙的香蕉是地球上最天天及了"))
+				repo.Put("fruits", entities.NewDocRequest("香蕉", "西班牙的香蕉是地球上最天天及了"))
 			},
 			assert: func(repo repos.IndexRepo) bool {
 				return !repo.Has("fruits")
@@ -178,7 +178,7 @@ func TestIndexHttpServer_ServeHTTP_Index(t *testing.T) {
 func TestIndexHttpServer_ServeHTTP_Alias(t *testing.T) {
 	// Set up server state
 	repo := repos.NewIndexRepo()
-	repo.Put("languages", internal.NewDocRequest("rust", "lenguaje con compilador grunon"))
+	repo.Put("languages", entities.NewDocRequest("rust", "lenguaje con compilador grunon"))
 	repo.Alias("rustaceans", "languages")
 
 	tests := []struct {

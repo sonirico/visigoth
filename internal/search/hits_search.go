@@ -2,19 +2,19 @@ package search
 
 import (
 	"fmt"
-	"github.com/sonirico/visigoth/internal"
 	"github.com/sonirico/visigoth/internal/container"
+	"github.com/sonirico/visigoth/pkg/entities"
 	"sort"
 )
 
 type HitsSearchRow interface {
-	internal.Row
+	entities.Row
 	Hits() int
 }
 
 type info struct {
 	annotated bool
-	doc       internal.Doc
+	doc       entities.Doc
 	hits      int
 }
 
@@ -22,11 +22,11 @@ func (i info) Hits() int {
 	return i.hits
 }
 
-func (i info) Doc() internal.Doc {
+func (i info) Doc() entities.Doc {
 	return i.doc
 }
 
-func (i *info) Ser(serializer internal.Serializer) []byte {
+func (i *info) Ser(serializer entities.Serializer) []byte {
 	return serializer.Serialize(i)
 }
 
@@ -42,7 +42,7 @@ func (s *hitsSearchResult) Add(row HitsSearchRow) {
 	s.items = append(s.items, row)
 }
 
-func (s *hitsSearchResult) Get(index int) internal.Row {
+func (s *hitsSearchResult) Get(index int) entities.Row {
 	if len(s.items) <= index {
 		return nil
 	}
@@ -63,8 +63,8 @@ func (s *hitsSearchResult) Swap(i, j int) {
 	s.items[i] = tmp
 }
 
-func (s *hitsSearchResult) Docs() []internal.Doc {
-	docs := make([]internal.Doc, len(s.items))
+func (s *hitsSearchResult) Docs() []entities.Doc {
+	docs := make([]entities.Doc, len(s.items))
 	i := 0
 	for _, info := range s.items {
 		docs[i] = info.Doc()
@@ -74,9 +74,9 @@ func (s *hitsSearchResult) Docs() []internal.Doc {
 	return docs
 }
 
-func HitsSearchEngine(tokens [][]byte, indexable Indexer) internal.Iterator {
+func HitsSearchEngine(tokens [][]byte, indexable Indexer) entities.Iterator {
 	threshold := len(tokens)
-	docSet := make(map[internal.HashKey]*info)
+	docSet := make(map[entities.HashKey]*info)
 	result := newHitsSearchResult()
 	for _, token := range tokens {
 		indexed := indexable.Indexed(string(token))

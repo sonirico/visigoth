@@ -1,7 +1,7 @@
 package search
 
 import (
-	"github.com/sonirico/visigoth/internal"
+	"github.com/sonirico/visigoth/pkg/entities"
 )
 
 type EngineType byte
@@ -16,7 +16,7 @@ const (
 type Indexer interface {
 	Len() int
 	Indexed(key string) []int
-	Document(index int) internal.Doc
+	Document(index int) entities.Doc
 }
 
-type Engine func(tokens [][]byte, indexable Indexer) internal.Iterator
+type Engine func(tokens [][]byte, indexable Indexer) entities.Iterator

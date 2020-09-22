@@ -2,8 +2,8 @@ package repos
 
 import (
 	"fmt"
-	"github.com/sonirico/visigoth/internal"
 	"github.com/sonirico/visigoth/internal/search"
+	"github.com/sonirico/visigoth/pkg/entities"
 	"sync"
 )
 
@@ -15,8 +15,8 @@ type IndexRepo interface {
 	Has(name string) bool
 	Alias(alias string, in string) bool
 	UnAlias(alias string) bool
-	Put(in string, req internal.DocRequest)
-	Search(index string, terms string, engine search.Engine) (internal.Iterator, error)
+	Put(in string, req entities.DocRequest)
+	Search(index string, terms string, engine search.Engine) (entities.Iterator, error)
 	Rename(old string, new string) bool
 	Drop(in string) bool
 }
@@ -113,7 +113,7 @@ func (h *indexRepo) Rename(old string, new string) bool {
 	return true
 }
 
-func (h *indexRepo) Search(iname string, terms string, engi search.Engine) (internal.Iterator, error) {
+func (h *indexRepo) Search(iname string, terms string, engi search.Engine) (entities.Iterator, error) {
 	h.L.RLock()
 	in := h.getIndex(iname)
 	if in == nil {
@@ -125,7 +125,7 @@ func (h *indexRepo) Search(iname string, terms string, engi search.Engine) (inte
 	return sr, nil
 }
 
-func (h *indexRepo) Put(iname string, doc internal.DocRequest) {
+func (h *indexRepo) Put(iname string, doc entities.DocRequest) {
 	in := h.getIndex(iname)
 	if in == nil {
 		h.L.Lock()
