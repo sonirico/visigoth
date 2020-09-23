@@ -50,11 +50,9 @@ func (n *node) Run(in chan vtp.Message, out chan vtp.Message, cfg *NodeConfig) {
 	}
 
 	for req := range in {
-		go func(req vtp.Message) {
-			tracer(req)
-			res := n.dispatch(req)
-			out <- res
-		}(req)
+		tracer(req)
+		res := n.dispatch(req)
+		out <- res
 	}
 }
 
