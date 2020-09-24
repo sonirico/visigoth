@@ -24,7 +24,7 @@ type JsonRowLoader struct {
 	withKeys bool
 }
 
-func NewJsonLoader(withKeys bool) *JsonRowLoader {
+func NewJSONRowLoader(withKeys bool) *JsonRowLoader {
 	return &JsonRowLoader{withKeys: withKeys}
 }
 

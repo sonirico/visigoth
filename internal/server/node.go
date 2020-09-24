@@ -27,7 +27,7 @@ type Node interface {
 }
 
 var (
-	jsonLoader = loaders.NewJsonLoader(false)
+	jsonLoader = loaders.NewJSONLoader(false)
 	textLoader = loaders.NewTextLoader()
 )
 
