@@ -3,13 +3,14 @@ package client
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/sonirico/visigoth/internal/search"
-	"github.com/sonirico/visigoth/pkg/entities"
-	"github.com/sonirico/visigoth/pkg/vtp"
 	"io"
 	"log"
 	"net"
 	"sync"
+
+	"github.com/sonirico/visigoth/internal/search"
+	"github.com/sonirico/visigoth/pkg/entities"
+	"github.com/sonirico/visigoth/pkg/vtp"
 )
 
 var (
@@ -34,9 +35,9 @@ type TCPClient struct {
 
 func NewTCPClient(bindTo string) *TCPClient {
 	return &TCPClient{
-		requests:       make(chan vtp.Message, 16),
-		responses:      make(chan vtp.Message, 16),
-		responsesProxy: make(chan vtp.Message, 16),
+		requests:       make(chan vtp.Message),
+		responses:      make(chan vtp.Message),
+		responsesProxy: make(chan vtp.Message),
 		bindTo:         bindTo,
 		compiler:       compiler,
 		parser:         parser,
@@ -132,9 +133,10 @@ func (c *TCPClient) dispatchResponses() {
 		c.callbackLock.RLock()
 		if cb, ok := c.callbacks[res.Id()]; ok {
 			cb(res)
+
 		}
 		c.callbackLock.RUnlock()
-		c.responsesProxy <- res
+		// c.responsesProxy <- res
 	}
 }
 
