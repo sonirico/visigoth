@@ -82,7 +82,7 @@ func (n *node) handleAliasRequest(msg vtp.Message) *vtp.StatusResponse {
 }
 
 func (n *node) handleUnAliasRequest(msg vtp.Message) *vtp.StatusResponse {
-	req := msg.(*vtp.AliasRequest)
+	req := msg.(*vtp.UnAliasRequest)
 	ok := n.repo.UnAlias(req.Alias.Value)
 	return vtp.NewStatusResponse(msg.Id(), msg.Version(), ok)
 }
