@@ -3,6 +3,7 @@ package client
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -34,14 +35,21 @@ type CmdClient struct {
 func NewCmdClient(bindTo string) *CmdClient {
 	env := newEnv()
 	return &CmdClient{
-		client:    NewTCPClient(bindTo),
+		client: NewTCPClient(&TCPClientConfig{
+			bindTo:      bindTo,
+			proxyStream: true,
+		}),
 		wg:        &sync.WaitGroup{},
 		evaluator: newCommandEvaluator(env),
 	}
 }
 
 func (c *CmdClient) eval(cmd string) {
-	Eval(cmd, c, c.wg)
+	msgs := c.evaluator.Eval(cmd)
+	for _, msg := range msgs {
+		c.wg.Add(1)
+		c.client.Request(msg)
+	}
 }
 
 func (c *CmdClient) print(out io.Writer) {
@@ -56,7 +64,8 @@ func (c *CmdClient) read(scanner Scanner) string {
 }
 
 func (c *CmdClient) Repl(in io.Reader, out io.Writer) {
-	go c.client.Start()
+	ctx := context.Background()
+	go c.client.Start(ctx)
 
 	scanner := bufio.NewScanner(in)
 
