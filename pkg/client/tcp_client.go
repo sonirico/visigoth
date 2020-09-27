@@ -19,9 +19,9 @@ type callback func(result vtp.Message)
 type errorCallback func(error)
 
 type TCPClientConfig struct {
-	bindTo       string
-	readPoolSize *int
-	proxyStream  bool
+	BindTo       string
+	ReadPoolSize *int
+	ProxyStream  bool
 }
 
 type TCPClient struct {
@@ -46,16 +46,16 @@ func NewTCPClient(config *TCPClientConfig) *TCPClient {
 		requests:  make(chan vtp.Message),
 		responses: make(chan vtp.Message),
 
-		bindTo:      config.bindTo,
-		proxyStream: config.proxyStream,
+		bindTo:      config.BindTo,
+		proxyStream: config.ProxyStream,
 
 		transport: server.NewVTPTransport(),
 		counter:   new(atomicCounter),
 		callbacks: make(map[uint64]callback),
 	}
 
-	if config.readPoolSize != nil {
-		client.readPoolSize = *config.readPoolSize
+	if config.ReadPoolSize != nil {
+		client.readPoolSize = *config.ReadPoolSize
 	} else {
 		client.readPoolSize = 1
 	}

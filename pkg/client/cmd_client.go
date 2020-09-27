@@ -36,8 +36,8 @@ func NewCmdClient(bindTo string) *CmdClient {
 	env := newEnv()
 	return &CmdClient{
 		client: NewTCPClient(&TCPClientConfig{
-			bindTo:      bindTo,
-			proxyStream: true,
+			BindTo:      bindTo,
+			ProxyStream: true,
 		}),
 		wg:        &sync.WaitGroup{},
 		evaluator: newCommandEvaluator(env),
