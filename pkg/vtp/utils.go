@@ -106,7 +106,7 @@ func NewDropIndexResponse(id uint64, version uint8, ok bool, index string) *Drop
 		Head: &Head{
 			id:          &UInt64Type{id},
 			version:     &ByteType{version},
-			messageType: MessageTypeToByte(DropReq),
+			messageType: MessageTypeToByte(DropRes),
 		},
 		Ok:    &ByteType{Value: okVal},
 		Index: &StringType{Value: index},
