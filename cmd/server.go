@@ -62,7 +62,7 @@ func main() {
 
 	go func() {
 		log.Println("http server listening on ", bindToHttp)
-		err := http.ListenAndServe(":9000", httpServer)
+		err := http.ListenAndServe(bindToHttp, httpServer)
 		done <- true
 		if err != nil {
 			log.Fatal(err)
