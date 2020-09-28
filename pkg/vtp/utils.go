@@ -10,9 +10,12 @@ var (
 		AliasReq:   "ALIAS",
 		UnAliasReq: "UNALIAS",
 		ListReq:    "LIST",
+		ListRes:    "LIST",
 		IndexReq:   "INDEX",
 		SearchReq:  "SEARCH",
+		SearchRes:  "SEARCH",
 		DropReq:    "DROP",
+		DropRes:    "DROP",
 		RenameReq:  "RENAME",
 	}
 )

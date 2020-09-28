@@ -5,11 +5,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/sonirico/visigoth/pkg/vtp"
 	"io"
 	"log"
 	"sync"
-
-	"github.com/sonirico/visigoth/pkg/vtp"
 )
 
 const (
@@ -35,7 +34,7 @@ type CmdClient struct {
 func NewCmdClient(bindTo string) *CmdClient {
 	env := newEnv()
 	return &CmdClient{
-		client: NewTCPClient(&TCPClientConfig{
+		client: NewTCPClient(TCPClientConfig{
 			BindTo:      bindTo,
 			ProxyStream: true,
 		}),
@@ -77,14 +76,6 @@ func (c *CmdClient) Repl(in io.Reader, out io.Writer) {
 		printSafe(out, Prompt)
 		line := c.read(scanner)
 		c.eval(line)
-	}
-}
-
-func Eval(cmd string, cmdClient *CmdClient, group *sync.WaitGroup) {
-	msgs := cmdClient.evaluator.Eval(cmd)
-	for _, msg := range msgs {
-		group.Add(1)
-		cmdClient.client.Request(msg)
 	}
 }
 
