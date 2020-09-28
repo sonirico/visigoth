@@ -7,8 +7,9 @@ import (
 )
 
 type hitsSearchRowSchema struct {
-	Doc  entities.Doc `json:"doc"`
-	Hits int          `json:"hits"`
+	DocId string                 `json:"_id"`
+	Doc   map[string]interface{} `json:"_doc"`
+	Hits  int                    `json:"hits"`
 }
 
 type jsonHitsSearchResultSerializer struct{}
@@ -18,9 +19,12 @@ func (j *jsonHitsSearchResultSerializer) Serialize(item entities.Row) []byte {
 	if !ok {
 		log.Fatal("unexpected type cannot be serialized. want 'hitsSearchRow', have %V", row)
 	}
+	doc := make(map[string]interface{})
+	_ = json.Unmarshal([]byte(row.Doc().Raw()), &doc)
 	data := &hitsSearchRowSchema{
-		Doc:  row.Doc(),
-		Hits: row.Hits(),
+		DocId: row.Doc().Id(),
+		Doc:   doc,
+		Hits:  row.Hits(),
 	}
 	raw, err := json.Marshal(data)
 	if err != nil {
