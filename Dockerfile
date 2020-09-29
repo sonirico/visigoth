@@ -12,10 +12,8 @@ RUN make build-docker
 
 FROM scratch
 
-ARG BINAME="visigoth"
-
 COPY --from=builder /app/build/*/* /usr/local/bin/
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 EXPOSE 7373
-ENTRYPOINT [ "/usr/local/bin/visigoth" ]
+ENTRYPOINT [ "/usr/local/bin/server" ]
