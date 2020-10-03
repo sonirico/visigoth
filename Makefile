@@ -38,6 +38,8 @@ help:
 	@echo "make docker - creates a docker image"
 	@echo "make docker-release/docker-release-latest - creates the docker image and pushes it to the registry (latest pushes also latest tag)"
 	@echo "make setup - adds git pre-commit hooks"
+	@echo "make run-server"
+	@echo "make run-client"
 
 .PHONY: clean
 clean:
@@ -74,7 +76,7 @@ test:
 .PHONY: coverage
 coverage:
 	@scripts/test.sh coverage
-	
+
 .PHONY: docker
 docker: build-docker
 	@scripts/docker.sh
@@ -90,3 +92,11 @@ docker-release-latest:
 .PHONY: setup
 setup:
 	@scripts/add-pre-commit.sh
+
+.PHONY: run-server
+run-server:
+	go run cmd/server/*.go
+
+.PHONY: run-client
+run-client:
+	go run cmd/cmd_client.go
