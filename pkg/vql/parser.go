@@ -136,21 +136,46 @@ func (p *Parser) parseUseStatement() Statement {
 func (p *Parser) parseIndexStatement() Statement {
 	st := &IndexStatement{
 		Token:   p.currentToken,
-		Index:   nil,
+		Index:   &StringLiteral{Value: "", Token: *NewToken(STRING, "")},
+		Aka:     &StringLiteral{Value: "", Token: *NewToken(STRING, "")},
+		Format:  &StringLiteral{Value: "TEXT", Token: *NewToken(STRING, "")},
 		Payload: nil,
 	}
-	p.nextToken()
-	if p.currentTokenIs(IdentifierTokenType) {
-		st.Index = p.parseIdentifierExpression()
+
+	if !p.expectPeekToken(STRING) {
+		return nil
 	}
-	if !p.peekTokenIs(STRING) {
-		// If there is no next string payload, the index is considered as such. Index will be the one stored
-		// in the environment, if any
-		st.Payload = st.Index
-		st.Index = nil
-	} else {
+
+	st.Payload = p.parseStringLiteral()
+
+	if p.peekTokenIs(AkaTokenType) {
 		p.nextToken()
-		st.Payload = p.parseStringLiteral()
+		if !p.expectPeekToken(STRING) {
+			return nil
+		}
+		st.Aka = p.parseIdentifierExpression()
+	}
+
+	if p.peekTokenIs(AsTokenType) {
+		p.nextToken()
+		if !p.expectPeekToken(IdentifierTokenType) {
+			return nil
+		}
+		st.Format = p.parseIdentifierExpression()
+	}
+
+	if p.peekTokenIs(IntoTokenType) {
+		p.nextToken()
+		if p.peekTokenIs(STRING) {
+			p.nextToken()
+			st.Index = p.parseStringLiteral()
+		} else if p.peekTokenIs(IdentifierTokenType) {
+			p.nextToken()
+			st.Index = p.parseIdentifierExpression()
+		} else {
+			p.addError("unexpected end of input. want literal or string, got %s", p.peekToken)
+			return nil
+		}
 	}
 
 	return st

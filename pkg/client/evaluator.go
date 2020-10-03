@@ -1,6 +1,7 @@
 package client
 
 import (
+	"github.com/sonirico/visigoth/pkg/entities"
 	"log"
 	"strings"
 	"sync/atomic"
@@ -42,6 +43,7 @@ func newCommandEvaluator(env *environment) *commandEvaluator {
 	cp.evalFunctions[vql.SearchTokenType] = cp.evalSearchStatement
 	cp.evalFunctions[vql.ShowTokenType] = cp.evalShowIndicesStatement
 	cp.evalFunctions[vql.UseTokenType] = cp.evalUseStatement
+	cp.evalFunctions[vql.IndexTokenType] = cp.evalIndexStatement
 	return cp
 }
 
@@ -67,6 +69,15 @@ func (c *commandEvaluator) Eval(raw string) []vtp.Message {
 		}
 	}
 	return msgs
+}
+
+func (c *commandEvaluator) evalIndexStatement(node vql.Node) vtp.Message {
+	q, _ := node.(*vql.IndexStatement)
+	format := entities.MimeText
+	if strings.ToLower(q.Format.Literal()) == "json" {
+		format = entities.MimeJSON
+	}
+	return vtp.NewIndexRequest(c.counter.Inc(), Version, q.Index.Literal(), q.Aka.Literal(), q.Payload.Literal(), format)
 }
 
 func (c *commandEvaluator) evalUseStatement(node vql.Node) vtp.Message {

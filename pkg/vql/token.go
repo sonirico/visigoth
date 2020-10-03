@@ -34,12 +34,15 @@ const (
 	ASSIGNMENT = "="
 
 	// keywords
+	AsTokenType     = "AS"
+	AkaTokenType    = "AKA"
 	DropTokenType   = "DROP"
 	ShowTokenType   = "SHOW"
 	SearchTokenType = "SEARCH"
 	FromTokenType   = "FROM"
 	UseTokenType    = "USE"
 	IndexTokenType  = "INDEX"
+	IntoTokenType   = "INTO"
 	UsingTokenType  = "USING"
 
 	// Delimiters
@@ -57,6 +60,9 @@ const (
 type TokenType string
 
 var keywords = map[string]TokenType{
+	"INTO":   IntoTokenType,
+	"AS":     AsTokenType,
+	"AKA":    AkaTokenType,
 	"USING":  UsingTokenType,
 	"DROP":   DropTokenType,
 	"SHOW":   ShowTokenType,
