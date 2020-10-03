@@ -143,17 +143,16 @@ func (n *node) handleSearchRequest(msg vtp.Message) vtp.Message {
 	case search.Hits:
 		engine = search.HitsSearchEngine
 	default:
-		panic("not implemented")
+		return vtp.NewStatusResponse(req.Id(), req.Version(), false)
 	}
 
 	results, err := n.repo.Search(index, terms, engine)
 
 	if err != nil {
-		// TODO: error response
-		return nil
+		log.Println(err)
+		return vtp.NewStatusResponse(req.Id(), req.Version(), false)
 	}
 
-	// TODO, as of now all
 	res := &vtp.HitsSearchResponse{
 		SearchResponse: &vtp.SearchResponse{
 			Head:   vtp.NewHeadResponse(msg),
