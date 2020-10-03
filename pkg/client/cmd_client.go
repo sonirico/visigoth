@@ -93,6 +93,13 @@ func PrintEnv(out io.Writer, env *environment) {
 
 func Print(out io.Writer, msg vtp.Message, group *sync.WaitGroup) {
 	switch msg.Type() {
+	case vtp.StatusRes:
+		res, _ := msg.(*vtp.StatusResponse)
+		if res.Ok.Value == 1 {
+			printSafe(out, "\nok\n")
+		} else {
+			printSafe(out, "\nko\n")
+		}
 	case vtp.ListRes:
 		res, _ := msg.(*vtp.ListIndicesResponse)
 		for i, index := range res.Indices {

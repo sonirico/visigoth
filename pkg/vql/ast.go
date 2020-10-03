@@ -102,7 +102,9 @@ func (i *SearchStatement) String() string {
 type IndexStatement struct {
 	Token   Token
 	Index   Expression
+	Aka     Expression
 	Payload Expression
+	Format  Expression
 }
 
 func (i *IndexStatement) statementNode() {}
