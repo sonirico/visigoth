@@ -44,6 +44,7 @@ func newCommandEvaluator(env *environment) *commandEvaluator {
 	cp.evalFunctions[vql.ShowTokenType] = cp.evalShowIndicesStatement
 	cp.evalFunctions[vql.UseTokenType] = cp.evalUseStatement
 	cp.evalFunctions[vql.IndexTokenType] = cp.evalIndexStatement
+	cp.evalFunctions[vql.AliasTokenType] = cp.evalAliasStatement
 	return cp
 }
 
@@ -69,6 +70,11 @@ func (c *commandEvaluator) Eval(raw string) []vtp.Message {
 		}
 	}
 	return msgs
+}
+
+func (c *commandEvaluator) evalAliasStatement(node vql.Node) vtp.Message {
+	q, _ := node.(*vql.AliasStatement)
+	return vtp.NewAliasRequest(c.counter.Inc(), Version, q.Index.Literal(), q.Alias.Literal())
 }
 
 func (c *commandEvaluator) evalIndexStatement(node vql.Node) vtp.Message {
