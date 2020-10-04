@@ -74,9 +74,29 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseShowStatement()
 	case DropTokenType:
 		return p.parseDropStatement()
+	case AliasTokenType:
+		return p.parseAliasStatement()
 	default:
 		return nil
 	}
+}
+
+func (p *Parser) parseAliasStatement() Statement {
+	alias := &AliasStatement{
+		Token: p.currentToken,
+		Index: nil,
+		Alias: nil,
+	}
+	alias.Index = p.parseStringLiteralOrIdentifier()
+	if alias.Index == nil {
+		return nil
+	}
+	alias.Alias = p.parseStringLiteralOrIdentifier()
+	if alias.Alias == nil {
+		return nil
+	}
+
+	return alias
 }
 
 func (p *Parser) parseShowStatement() Statement {
@@ -166,14 +186,7 @@ func (p *Parser) parseIndexStatement() Statement {
 
 	if p.peekTokenIs(IntoTokenType) {
 		p.nextToken()
-		if p.peekTokenIs(STRING) {
-			p.nextToken()
-			st.Index = p.parseStringLiteral()
-		} else if p.peekTokenIs(IdentifierTokenType) {
-			p.nextToken()
-			st.Index = p.parseIdentifierExpression()
-		} else {
-			p.addError("unexpected end of input. want literal or string, got %s", p.peekToken)
+		if st.Index = p.parseStringLiteralOrIdentifier(); st.Index == nil {
 			return nil
 		}
 	}
@@ -214,6 +227,19 @@ func (p *Parser) parseSearchStatement() Statement {
 	}
 
 	return st
+}
+
+func (p *Parser) parseStringLiteralOrIdentifier() Expression {
+	if p.peekTokenIs(STRING) {
+		p.nextToken()
+		return p.parseStringLiteral()
+	} else if p.peekTokenIs(IdentifierTokenType) {
+		p.nextToken()
+		return p.parseIdentifierExpression()
+	} else {
+		p.addError("unexpected end of input. want literal or string, got %s", p.peekToken)
+		return nil
+	}
 }
 
 func (p *Parser) parseIdentifierExpression() Expression {

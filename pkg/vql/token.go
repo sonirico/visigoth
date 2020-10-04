@@ -34,16 +34,18 @@ const (
 	ASSIGNMENT = "="
 
 	// keywords
-	AsTokenType     = "AS"
-	AkaTokenType    = "AKA"
-	DropTokenType   = "DROP"
-	ShowTokenType   = "SHOW"
-	SearchTokenType = "SEARCH"
-	FromTokenType   = "FROM"
-	UseTokenType    = "USE"
-	IndexTokenType  = "INDEX"
-	IntoTokenType   = "INTO"
-	UsingTokenType  = "USING"
+	AsTokenType      = "AS"
+	AkaTokenType     = "AKA"
+	DropTokenType    = "DROP"
+	ShowTokenType    = "SHOW"
+	SearchTokenType  = "SEARCH"
+	FromTokenType    = "FROM"
+	UseTokenType     = "USE"
+	IndexTokenType   = "INDEX"
+	IntoTokenType    = "INTO"
+	UsingTokenType   = "USING"
+	AliasTokenType   = "ALIAS"
+	UnAliasTokenType = "UNALIAS"
 
 	// Delimiters
 	COMMA     = ","
@@ -60,18 +62,20 @@ const (
 type TokenType string
 
 var keywords = map[string]TokenType{
-	"INTO":   IntoTokenType,
-	"AS":     AsTokenType,
-	"AKA":    AkaTokenType,
-	"USING":  UsingTokenType,
-	"DROP":   DropTokenType,
-	"SHOW":   ShowTokenType,
-	"SEARCH": SearchTokenType,
-	"FROM":   FromTokenType,
-	"USE":    UseTokenType,
-	"INDEX":  IndexTokenType,
-	"true":   TRUE,
-	"false":  FALSE,
+	"ALIAS":   AliasTokenType,
+	"UNALIAS": UnAliasTokenType,
+	"INTO":    IntoTokenType,
+	"AS":      AsTokenType,
+	"AKA":     AkaTokenType,
+	"USING":   UsingTokenType,
+	"DROP":    DropTokenType,
+	"SHOW":    ShowTokenType,
+	"SEARCH":  SearchTokenType,
+	"FROM":    FromTokenType,
+	"USE":     UseTokenType,
+	"INDEX":   IndexTokenType,
+	"true":    TRUE,
+	"false":   FALSE,
 }
 
 func LookupKeyword(literal string) TokenType {

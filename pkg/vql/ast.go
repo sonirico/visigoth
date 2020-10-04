@@ -131,6 +131,38 @@ func (i *DropStatement) String() string {
 	return i.Target.Literal()
 }
 
+// ALIAS statement
+type AliasStatement struct {
+	Token Token
+	Index Expression
+	Alias Expression
+}
+
+func (i *AliasStatement) statementNode() {}
+func (i *AliasStatement) Literal() string {
+	return i.Token.Literal
+}
+func (i *AliasStatement) String() string {
+	// TODO
+	return i.Index.Literal()
+}
+
+// UNALIAS statement
+type UnAliasStatement struct {
+	Token Token
+	Index Expression
+	Alias Expression
+}
+
+func (i *UnAliasStatement) statementNode() {}
+func (i *UnAliasStatement) Literal() string {
+	return i.Token.Literal
+}
+func (i *UnAliasStatement) String() string {
+	// TODO
+	return i.Index.Literal()
+}
+
 // QUERY statement
 type Query struct {
 	Statements []Statement
