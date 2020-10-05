@@ -127,7 +127,9 @@ func (h *indexRepo) UnAlias(alias, index string) bool {
 		h.aliasesMu.Unlock()
 	} else {
 		// remove the entire alias if no index if specified
+		_, ok := h.aliases[alias]
 		delete(h.aliases, alias)
+		return ok
 	}
 	return true
 }

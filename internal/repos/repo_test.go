@@ -29,23 +29,23 @@ func Test_IndexRepo_Alias_Index_DoesNotExist(t *testing.T) {
 	}
 }
 
-func Test_IndexRepo_UnAlias_Alias_Exists(t *testing.T) {
+func Test_IndexRepo_UnAlias_All_Alias_Exists(t *testing.T) {
 	repo := NewIndexRepo()
 
 	repo.Put("dedos", entities.NewDocRequest("pulgar", "este fue a por huevos"))
 	repo.Alias("dedos:latest", "dedos")
 
-	if ok := repo.UnAlias("dedos:latest"); !ok {
+	if ok := repo.UnAlias("dedos:latest", ""); !ok {
 		t.Errorf("alias failed. alias should exist, have otherwise")
 	}
 }
 
-func Test_IndexRepo_Alias_Alias_DoesNotExist(t *testing.T) {
+func Test_IndexRepo_UnAlias_All_Alias_DoesNotExist(t *testing.T) {
 	repo := NewIndexRepo()
 
 	repo.Put("dedos", entities.NewDocRequest("pulgar", "este fue a por huevos"))
 
-	if ok := repo.UnAlias("dedos:latest"); ok {
+	if ok := repo.UnAlias("dedos:latest", ""); ok {
 		t.Errorf("alias failed. received alias that should not exist, have otherwise")
 	}
 }
