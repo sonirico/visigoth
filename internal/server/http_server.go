@@ -70,7 +70,7 @@ func (s *httpServer) handleAlias(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		if s.repo.UnAlias(alias) {
+		if s.repo.UnAlias(alias, "") {
 			w.WriteHeader(http.StatusNoContent)
 		} else {
 			w.WriteHeader(http.StatusNotFound)

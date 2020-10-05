@@ -1,9 +1,10 @@
 package repos
 
 import (
+	"testing"
+
 	"github.com/sonirico/visigoth/internal/search"
 	"github.com/sonirico/visigoth/pkg/entities"
-	"testing"
 )
 
 func Test_IndexRepo_Alias_Index_Exists(t *testing.T) {
@@ -56,7 +57,36 @@ func Test_IndexRepo_Search_By_Alias(t *testing.T) {
 	repo.Alias("dedos:latest", "dedos")
 	_, err := repo.Search("dedos:latest", "huevos", search.NoopAllSearchEngine)
 	if err != nil {
-		t.Errorf("unexpected error. want search by alias return result, have error %s", err.Error())
+		t.Errorf("unexpected error. want search by alias return result, have error %s", err)
+	}
+}
+
+func Test_IndexRepo_Search_By_AliasSeveralPointedIndices(t *testing.T) {
+	repo := NewIndexRepo()
+	repo.Put("dedos", entities.NewDocRequest("pulgar", "este fue a por huevos"))
+	repo.Put("comida", entities.NewDocRequest("huevos", "los huevos son cuerpos redondeados"))
+	repo.Alias("huevos:latest", "dedos")
+	repo.Alias("huevos:latest", "comida")
+	res, err := repo.Search("huevos:latest", "huevos", search.HitsSearchEngine)
+	if err != nil {
+		t.Errorf("unexpected error. want search by alias return result, have error %s", err)
+	}
+	expectedDocuments := map[string]bool{"pulgar": false, "huevos": false}
+	for {
+		item, done := res.Next()
+		if item != nil {
+			doc := item.Doc().Id()
+			_, ok := expectedDocuments[doc]
+			expectedDocuments[doc] = ok
+		}
+		if done {
+			break
+		}
+	}
+	for index, ok := range expectedDocuments {
+		if !ok {
+			t.Errorf("expected document '%s' to be seen in result", index)
+		}
 	}
 }
 
@@ -106,6 +136,41 @@ func Test_IndexRepo_HotSwap(t *testing.T) {
 	r, err := repo.Search("dedos:latest", "zampo", search.NoopAllSearchEngine)
 	if err != nil {
 		t.Errorf("unexpected error. want search by alias return result, have error %s %s", err.Error(), r)
+		return
+	}
+}
+
+func Test_IndexRepo_Drop_IndexExists(t *testing.T) {
+	repo := NewIndexRepo()
+	repo.Put("dedos", entities.NewDocRequest("pulgar", "este fue a por huevos"))
+	if ok := repo.Drop("dedos"); !ok {
+		t.Errorf("expected index 'dedos' to exist")
+		return
+	}
+	if repo.Has("dedos") {
+		t.Errorf("unexpected drop result. expected '%s' to have been dropped, but wasn't", "dedos")
+		return
+	}
+}
+
+func Test_IndexRepo_Drop_IndexDoesNotExist(t *testing.T) {
+	repo := NewIndexRepo()
+	if ok := repo.Drop("dedos"); ok {
+		t.Errorf("expected index 'dedos' to have been erased")
+		return
+	}
+}
+
+func Test_IndexRepo_Drop_IndexWithAliasExists_ShouldDropAlias(t *testing.T) {
+	repo := NewIndexRepo()
+	repo.Put("dedos", entities.NewDocRequest("pulgar", "este fue a por huevos"))
+	repo.Alias("dedos:latest", "dedos")
+	if ok := repo.Drop("dedos"); !ok {
+		t.Errorf("expected index 'dedos' to have been dropped")
+		return
+	}
+	if repo.HasAlias("dedos:latest") {
+		t.Errorf("expected alias '%s' to have been erased too", "dedos:latest")
 		return
 	}
 }

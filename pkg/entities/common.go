@@ -14,7 +14,10 @@ type Row interface {
 }
 
 type Iterator interface {
+	Pos() int
+	Iterable() Result
 	Next() (Row, bool)
+	Chain(Iterator) Iterator
 }
 
 type Result interface {

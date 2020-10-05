@@ -27,14 +27,17 @@ func testAliasStatement(t *testing.T, actual Statement, expected testCaseAlias) 
 
 	if !ok {
 		t.Errorf("unexpected statement type. want AliasStatement, have %T(%v)", stmt, stmt)
+		return false
 	}
 	if stmt.Index.Literal() != expected.indexName {
 		t.Errorf("unexpected index name. want '%s', have '%s'",
 			expected.indexName, stmt.Index.Literal())
+		return false
 	}
 	if stmt.Alias.Literal() != expected.aliasName {
 		t.Errorf("unexpected index format. want '%s', have '%s'",
 			expected.aliasName, stmt.Alias.Literal())
+		return false
 	}
 
 	return true
@@ -47,18 +50,22 @@ func testIndexStatement(t *testing.T, actual Statement, expected testCaseIndex) 
 
 	if !ok {
 		t.Errorf("unexpected statement type. want IndexStatement, have %T(%v)", stmt, stmt)
+		return false
 	}
 	if stmt.Index.Literal() != expected.indexName {
 		t.Errorf("unexpected index name. want '%s', have '%s'",
 			expected.indexName, stmt.Index.Literal())
+		return false
 	}
 	if stmt.Payload.Literal() != expected.indexPayload {
 		t.Errorf("unexpected index payload. want '%s', have '%s'",
 			expected.indexPayload, stmt.Payload.Literal())
+		return false
 	}
 	if stmt.Format.Literal() != expected.indexFormat {
 		t.Errorf("unexpected index format. want '%s', have '%s'",
 			expected.indexFormat, stmt.Format.Literal())
+		return false
 	}
 
 	return true
@@ -80,12 +87,77 @@ func TestParser_SearchStatementWithUsing(t *testing.T) {
 	fmt.Println(query.String())
 }
 
+func TestParser_UnAliasStatement(t *testing.T) {
+	tests := []testCaseUnAlias{
+		{
+			query:     "UNALIAS 'index name' AS 'alias name'",
+			indexName: "index name",
+			aliasName: "alias name",
+		},
+		{
+			query:     "UNALIAS index as alias",
+			indexName: "index name",
+			aliasName: "alias name",
+		},
+		{
+			query:     "UNALIAS 'index name' 'alias name'",
+			indexName: "index name",
+			aliasName: "alias name",
+		},
+		{
+			query:     "UNALIAS index_name index_alias",
+			indexName: "index_name",
+			aliasName: "index_alias",
+		},
+		{
+			query:     "UNALIAS 'alias name'",
+			indexName: "",
+			aliasName: "alias name",
+		},
+		{
+			query:       "UNALIAS",
+			totalErrors: 1,
+		},
+	}
+
+	for _, test := range tests {
+		lexer := NewLexer(test.query)
+		parser := NewParser(lexer)
+		query := parser.ParseQuery()
+		if len(parser.errors) == test.totalErrors {
+			continue
+		}
+		t.Errorf("unexpected number of errors: %d, parser errors for query '%s'",
+			len(parser.errors), test.query)
+		for _, e := range parser.Errors() {
+			t.Errorf(e)
+		}
+		if len(query.Statements) < 1 {
+			t.Fatal("unexpected query with zero statements")
+		}
+
+		if !testUnAliasStatement(t, query.Statements[0], test) {
+			t.Fatal()
+		}
+	}
+}
+
 func TestParser_AliasStatement(t *testing.T) {
 	tests := []testCaseAlias{
+		{
+			query:     "ALIAS 'index name' AS 'alias name'",
+			indexName: "index name",
+			aliasName: "alias name",
+		},
 		{
 			query:     "ALIAS 'index name' 'alias name'",
 			indexName: "index name",
 			aliasName: "alias name",
+		},
+		{
+			query:     "ALIAS index as alias",
+			indexName: "index_name",
+			aliasName: "index_alias",
 		},
 		{
 			query:     "ALIAS index_name index_alias",
@@ -94,7 +166,6 @@ func TestParser_AliasStatement(t *testing.T) {
 		},
 		{
 			query:       "ALIAS 'alias name'",
-			indexName:   "index",
 			totalErrors: 1,
 		},
 	}
