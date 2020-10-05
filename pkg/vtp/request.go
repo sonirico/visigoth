@@ -67,6 +67,7 @@ type AliasRequest struct {
 
 type UnAliasRequest struct {
 	*Head
+	Index *StringType
 	Alias *StringType
 }
 

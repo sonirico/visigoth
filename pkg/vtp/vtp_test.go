@@ -42,6 +42,12 @@ func testHeadEquals(t *testing.T, one, other Message) bool {
 func testUnAliasRequestEquals(t *testing.T, one, other *UnAliasRequest) bool {
 	t.Helper()
 
+	if strings.Compare(one.Index.Value, other.Index.Value) != 0 {
+		t.Errorf("unAliasRequest: '%s' is not equal to '%s'",
+			one.Alias.Value, other.Alias.Value)
+		return false
+	}
+
 	if strings.Compare(one.Alias.Value, other.Alias.Value) != 0 {
 		t.Errorf("unAliasRequest: '%s' is not equal to '%s'",
 			one.Alias.Value, other.Alias.Value)
@@ -407,12 +413,14 @@ func TestCompile_BigEndian(t *testing.T) {
 					version:     &ByteType{0},
 					messageType: MessageTypeToByte(UnAliasReq),
 				},
+				Index: &StringType{"index"},
 				Alias: &StringType{"aliases"},
 			},
 			expectedCode: []byte{
 				0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 				0x0,
 				byte(UnAliasReq),
+				0x5, byte('i'), byte('n'), byte('d'), byte('e'), byte('x'),
 				0x7, byte('a'), byte('l'), byte('i'), byte('a'), byte('s'), byte('e'), byte('s'),
 			},
 			compiler: BigEndianCompiler,

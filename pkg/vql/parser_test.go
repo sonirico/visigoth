@@ -20,6 +20,37 @@ type testCaseAlias struct {
 	totalErrors int
 }
 
+type testCaseUnAlias = testCaseAlias
+
+func testUnAliasStatement(t *testing.T, actual Statement, expected testCaseUnAlias) bool {
+	t.Helper()
+
+	stmt, ok := actual.(*UnAliasStatement)
+
+	if !ok {
+		t.Errorf("unexpected statement type. want UnAliasStatement, have %T(%v)", stmt, stmt)
+		return false
+	}
+	if stmt.Index == nil {
+		if len(expected.indexName) > 0 {
+			t.Errorf("unexpected index name. want %s, have nil", expected.indexName)
+			return false
+		}
+	} else if stmt.Index.Literal() != expected.indexName {
+		t.Errorf("unexpected index name. want '%s', have '%s'",
+			expected.indexName, stmt.Index.Literal())
+		return false
+	}
+
+	if stmt.Alias != nil && stmt.Alias.Literal() != expected.aliasName {
+		t.Errorf("unexpected index format. want '%s', have '%s'",
+			expected.aliasName, stmt.Alias.Literal())
+		return false
+	}
+
+	return true
+}
+
 func testAliasStatement(t *testing.T, actual Statement, expected testCaseAlias) bool {
 	t.Helper()
 

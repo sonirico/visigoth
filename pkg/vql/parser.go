@@ -76,9 +76,36 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseDropStatement()
 	case AliasTokenType:
 		return p.parseAliasStatement()
+	case UnAliasTokenType:
+		return p.parseUnAliasStatement()
 	default:
 		return nil
 	}
+}
+
+func (p *Parser) parseUnAliasStatement() Statement {
+	unalias := &UnAliasStatement{
+		Token: p.currentToken,
+		Index: nil,
+		Alias: nil,
+	}
+	unalias.Index = p.parseStringLiteralOrIdentifier(true)
+	if unalias.Index == nil {
+		return nil
+	}
+	if p.peekTokenIs(AsTokenType) {
+		p.nextToken()
+	}
+	unalias.Alias = p.parseStringLiteralOrIdentifier(false)
+	if unalias.Alias == nil {
+		// If there is no second parameter, the first parameter
+		// is considered to be the alias to be totally removed
+		unalias.Alias = unalias.Index
+		unalias.Index = nil
+	}
+
+	return unalias
+
 }
 
 func (p *Parser) parseAliasStatement() Statement {

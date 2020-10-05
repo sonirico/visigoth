@@ -249,11 +249,15 @@ func ParseAliasMessage(head *Head, src io.Reader, parser Parser) (*AliasRequest,
 }
 
 func ParseUnAliasMessage(head *Head, src io.Reader, parser Parser) (*UnAliasRequest, error) {
+	index, err := parser.ParseStringType(src)
+	if err != nil {
+		return nil, err
+	}
 	alias, err := parser.ParseStringType(src)
 	if err != nil {
 		return nil, err
 	}
-	return &UnAliasRequest{Head: head, Alias: alias}, nil
+	return &UnAliasRequest{Head: head, Index: index, Alias: alias}, nil
 }
 
 func ParseListIndicesRequest(head *Head) (*ListIndicesRequest, error) {

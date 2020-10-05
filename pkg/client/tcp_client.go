@@ -179,8 +179,8 @@ func (c *TCPClient) Alias(index, alias string, cb callback) {
 	}
 }
 
-func (c *TCPClient) UnAlias(alias string, cb callback) {
-	msg := vtp.NewUnAliasRequest(c.counter.Inc(), Version, alias)
+func (c *TCPClient) UnAlias(index, alias string, cb callback) {
+	msg := vtp.NewUnAliasRequest(c.counter.Inc(), Version, index, alias)
 	c.requests <- msg
 	if cb != nil {
 		c.registerCallback(msg.Id(), cb)
