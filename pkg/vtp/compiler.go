@@ -183,6 +183,12 @@ func compileIndexRequest(w io.Writer, req *IndexRequest, comp Compiler) error {
 }
 
 func compileUnAliasRequest(w io.Writer, req *UnAliasRequest, comp Compiler) error {
+	if err := comp.CompileUInt8(w, uint8(req.Index.Len())); err != nil {
+		return err
+	}
+	if err := comp.CompileStringType(w, req.Index); err != nil {
+		return err
+	}
 	if err := comp.CompileUInt8(w, uint8(req.Alias.Len())); err != nil {
 		return err
 	}

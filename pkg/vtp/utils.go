@@ -78,13 +78,14 @@ func NewAliasRequest(id uint64, version uint8, index, alias string) *AliasReques
 	}
 }
 
-func NewUnAliasRequest(id uint64, version uint8, alias string) *UnAliasRequest {
+func NewUnAliasRequest(id uint64, version uint8, index, alias string) *UnAliasRequest {
 	return &UnAliasRequest{
 		Head: &Head{
 			id:          &UInt64Type{id},
 			version:     &ByteType{version},
 			messageType: MessageTypeToByte(UnAliasReq),
 		},
+		Index: &StringType{index},
 		Alias: &StringType{alias},
 	}
 }
