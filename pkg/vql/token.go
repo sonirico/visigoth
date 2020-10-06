@@ -1,5 +1,7 @@
 package vql
 
+import "strings"
+
 const (
 	// MISC
 	ILLEGAL = "ILLEGAL"
@@ -78,8 +80,23 @@ var keywords = map[string]TokenType{
 	"false":   FALSE,
 }
 
+func TokenIsKeyword(t Token) bool {
+	if _, ok := keywords[strings.ToLower(t.Literal)]; ok {
+		return true
+	}
+
+	if _, ok := keywords[strings.ToUpper(t.Literal)]; ok {
+		return true
+	}
+
+	return false
+}
+
 func LookupKeyword(literal string) TokenType {
 	if tt, ok := keywords[literal]; ok {
+		return tt
+	}
+	if tt, ok := keywords[strings.ToUpper(literal)]; ok {
 		return tt
 	}
 	return IdentifierTokenType
@@ -90,6 +107,14 @@ type Token struct {
 	Literal string
 }
 
+func (t Token) IsKeyword() bool {
+	return TokenIsKeyword(t)
+}
+
 func NewToken(tokenType TokenType, literal string) *Token {
 	return &Token{Type: tokenType, Literal: literal}
 }
+
+var (
+	IllegalToken = Token{Type: ILLEGAL, Literal: ""}
+)

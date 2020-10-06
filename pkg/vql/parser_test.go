@@ -22,6 +22,57 @@ type testCaseAlias struct {
 
 type testCaseUnAlias = testCaseAlias
 
+type testCaseUse struct {
+	query     string
+	indexName string
+}
+
+type testCaseShow struct {
+	query string
+	shown string
+}
+
+func testShowStatement(t *testing.T, actual Statement, expected testCaseShow) bool {
+	t.Helper()
+
+	stmt, ok := actual.(*ShowStatement)
+
+	if !ok {
+		t.Errorf("unexpected statement type. want AliasStatement, have %T(%v)", stmt, stmt)
+		return false
+	}
+	if stmt.Shown.Literal() != expected.shown {
+		t.Errorf("unexpected index name. want '%s', have '%s'",
+			expected.shown, stmt.Shown.Literal())
+		return false
+	}
+
+	return true
+}
+
+func testUseStatement(t *testing.T, actual Statement, expected testCaseUse) bool {
+	t.Helper()
+
+	stmt, ok := actual.(*UseStatement)
+
+	if !ok {
+		t.Errorf("unexpected statement type. want AliasStatement, have %T(%v)", stmt, stmt)
+		return false
+	}
+
+	if stmt.Token.Type != UseTokenType {
+		t.Errorf("unexpected token type. want '%s', have '%s'", UseTokenType, stmt.Token.Type)
+	}
+
+	if stmt.Used.Literal() != expected.indexName {
+		t.Errorf("unexpected index name. want '%s', have '%s'",
+			expected.indexName, stmt.Used.Literal())
+		return false
+	}
+
+	return true
+}
+
 func testUnAliasStatement(t *testing.T, actual Statement, expected testCaseUnAlias) bool {
 	t.Helper()
 
@@ -121,6 +172,11 @@ func TestParser_SearchStatementWithUsing(t *testing.T) {
 func TestParser_UnAliasStatement(t *testing.T) {
 	tests := []testCaseUnAlias{
 		{
+			query:     "unalias index as alias",
+			indexName: "index name",
+			aliasName: "alias name",
+		},
+		{
 			query:     "UNALIAS 'index name' AS 'alias name'",
 			indexName: "index name",
 			aliasName: "alias name",
@@ -176,6 +232,11 @@ func TestParser_UnAliasStatement(t *testing.T) {
 func TestParser_AliasStatement(t *testing.T) {
 	tests := []testCaseAlias{
 		{
+			query:     "alias index as alias",
+			indexName: "index name",
+			aliasName: "alias name",
+		},
+		{
 			query:     "ALIAS 'index name' AS 'alias name'",
 			indexName: "index name",
 			aliasName: "alias name",
@@ -226,6 +287,13 @@ func TestParser_AliasStatement(t *testing.T) {
 func TestParser_IndexStatement(t *testing.T) {
 	tests := []testCaseIndex{
 		{
+			query:        "index 'document content' aka 'content' as json into 'index with spaces'",
+			indexAka:     "content",
+			indexPayload: "document content",
+			indexFormat:  "json",
+			indexName:    "index with spaces",
+		},
+		{
 			query:        "INDEX 'document content' AKA 'content' AS JSON INTO 'index with spaces'",
 			indexAka:     "content",
 			indexPayload: "document content",
@@ -267,7 +335,7 @@ func TestParser_IndexStatement(t *testing.T) {
 			}
 		}
 		if len(query.Statements) < 1 {
-			t.Errorf("unexpected query with zero statements")
+			t.Fatalf("unexpected query with zero statements")
 		}
 
 		if !testIndexStatement(t, query.Statements[0], test) {
@@ -277,27 +345,83 @@ func TestParser_IndexStatement(t *testing.T) {
 }
 
 func TestParser_UseStatement(t *testing.T) {
-	payload := "USE index"
-	lexer := NewLexer(payload)
-	parser := NewParser(lexer)
-	query := parser.ParseQuery()
-	fmt.Println(query.String())
-}
+	tests := []testCaseUse{
+		{
+			query:     "USE index",
+			indexName: "index",
+		},
+		{
+			query:     "use index",
+			indexName: "index",
+		},
+		{
+			query:     "use 'index with spaces'",
+			indexName: "index with spaces",
+		},
+		{
+			query:     "USE 'index'",
+			indexName: "index",
+		},
+	}
+	for _, test := range tests {
+		lexer := NewLexer(test.query)
+		parser := NewParser(lexer)
+		query := parser.ParseQuery()
+		if len(parser.errors) > 0 {
+			t.Errorf("%d, parser errors for query '%s'",
+				len(parser.errors), test.query)
+			for _, e := range parser.Errors() {
+				t.Errorf(e)
+			}
+		}
+		if len(query.Statements) < 1 {
+			t.Fatalf("unexpected query with zero statements")
+		}
 
-func TestParser_UseStatementSpaces(t *testing.T) {
-	payload := "USE 'index with spaces'"
-	lexer := NewLexer(payload)
-	parser := NewParser(lexer)
-	query := parser.ParseQuery()
-	fmt.Println(query.String())
+		if !testUseStatement(t, query.Statements[0], test) {
+			t.Fatal()
+		}
+	}
 }
 
 func TestParser_ShowIndicesStatement(t *testing.T) {
-	payload := "SHOW indices"
-	lexer := NewLexer(payload)
-	parser := NewParser(lexer)
-	query := parser.ParseQuery()
-	fmt.Println(query.String())
+	tests := []testCaseShow{
+		{
+			query: "SHOW indices",
+			shown: "indices",
+		},
+		{
+			query: "show 'indices'",
+			shown: "indices",
+		},
+		{
+			query: "SHOW aliases",
+			shown: "aliases",
+		},
+		{
+			query: "show 'aliases'",
+			shown: "aliases",
+		},
+	}
+	for _, test := range tests {
+		lexer := NewLexer(test.query)
+		parser := NewParser(lexer)
+		query := parser.ParseQuery()
+		if len(parser.errors) > 0 {
+			t.Errorf("%d, parser errors for query '%s'",
+				len(parser.errors), test.query)
+			for _, e := range parser.Errors() {
+				t.Errorf(e)
+			}
+		}
+		if len(query.Statements) < 1 {
+			t.Fatalf("unexpected query with zero statements")
+		}
+
+		if !testShowStatement(t, query.Statements[0], test) {
+			t.Fatal()
+		}
+	}
 }
 
 func TestParser_DropIndexStatement(t *testing.T) {
