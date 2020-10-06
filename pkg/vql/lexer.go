@@ -1,5 +1,10 @@
 package vql
 
+import (
+	"fmt"
+	"strings"
+)
+
 var WHITESPACES = map[byte]int{
 	'\n': 1,
 	'\r': 1,
@@ -26,15 +31,18 @@ func NewLexer(code string) *Lexer {
 	return &lexer
 }
 
-func (l *Lexer) readChar() {
+func (l *Lexer) readChar() bool {
+	end := false
 	if l.nextPosition >= l.inputLength {
 		l.currentChar = 0
+		end = true
 	} else {
 		l.currentChar = l.input[l.nextPosition]
 	}
 
 	l.currentPosition = l.nextPosition
 	l.nextPosition += 1
+	return end
 }
 
 func (l *Lexer) peekChar() byte {
@@ -44,10 +52,11 @@ func (l *Lexer) peekChar() byte {
 	return l.input[l.nextPosition]
 }
 
-func (l *Lexer) NextToken() Token {
+func (l *Lexer) NextToken() (Token, error) {
 	var tok Token
 
 	l.consumeWhitespace()
+	currentPos := l.currentPosition
 
 	switch l.currentChar {
 	// Delimiters
@@ -79,9 +88,15 @@ func (l *Lexer) NextToken() Token {
 		break
 	case '"', '\'':
 		prevChar := l.currentChar
-		l.readChar()
+		if l.readChar() {
+			return IllegalToken, newErrorAtPosition(l.input, int(currentPos))
+		}
 		tok.Type = STRING
-		tok.Literal = l.readString(prevChar)
+		literal, done := l.readString(prevChar)
+		if done {
+			return IllegalToken, newErrorAtPosition(l.input, int(currentPos))
+		}
+		tok.Literal = literal
 		break
 	// Operators
 	case '<':
@@ -156,28 +171,32 @@ func (l *Lexer) NextToken() Token {
 		break
 	default:
 		if isDigit(l.currentChar) {
-			return Token{Type: INT, Literal: l.readNumber()}
+			return Token{Type: INT, Literal: l.readNumber()}, nil
 		} else if isLetter(l.currentChar) {
 			literal := l.readWord()
 			ttype := LookupKeyword(literal)
-			return Token{Type: ttype, Literal: literal}
+			return Token{Type: ttype, Literal: literal}, nil
 		}
 		tok = newToken(ILLEGAL, l.currentChar)
 	}
 	l.readChar()
-	return tok
+	return tok, nil
 }
 
 func (l *Lexer) consumeWhitespace() {
 	for isWhiteSpace(l.currentChar) {
-		l.readChar()
+		if l.readChar() {
+			return
+		}
 	}
 }
 
 func (l *Lexer) readNumber() string {
 	pos := l.currentPosition
 	for isDigit(l.currentChar) {
-		l.readChar()
+		if l.readChar() {
+			break
+		}
 	}
 	return l.input[pos:l.currentPosition]
 }
@@ -185,19 +204,25 @@ func (l *Lexer) readNumber() string {
 func (l *Lexer) readWord() string {
 	pos := l.currentPosition
 	for isLetter(l.currentChar) {
-		l.readChar()
+		if l.readChar() {
+			break
+		}
 	}
 	return l.input[pos:l.currentPosition]
 }
 
-func (l *Lexer) readString(end byte) string {
+func (l *Lexer) readString(end byte) (string, bool) {
 	pos := l.currentPosition
+	ended := false
 
 	for l.currentChar != end {
-		l.readChar()
+		if l.readChar() {
+			ended = true
+			break
+		}
 	}
 
-	return l.input[pos:l.currentPosition]
+	return l.input[pos:l.currentPosition], ended
 }
 
 func isDigit(char byte) bool {
@@ -217,4 +242,11 @@ func isWhiteSpace(char byte) bool {
 
 func newToken(tokenType TokenType, literal byte) Token {
 	return Token{Type: tokenType, Literal: string(literal)}
+}
+
+func newErrorAtPosition(input string, pos int) error {
+	marker := []rune(strings.Repeat("-", len(input)))
+	marker[pos] = '^'
+	return fmt.Errorf("unterminated string literal at position <%d>\n<%s>\n<%s>",
+		pos, input, string(marker))
 }

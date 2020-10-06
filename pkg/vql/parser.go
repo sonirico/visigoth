@@ -31,7 +31,11 @@ func (p *Parser) Errors() []string {
 
 func (p *Parser) nextToken() {
 	p.currentToken = p.peekToken
-	p.peekToken = p.lexer.NextToken()
+	peekToken, err := p.lexer.NextToken()
+	if err != nil {
+		p.addError(err.Error())
+	}
+	p.peekToken = peekToken
 }
 
 func (p *Parser) currentTokenIs(Type TokenType) bool {
