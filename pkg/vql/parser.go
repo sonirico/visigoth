@@ -132,13 +132,10 @@ func (p *Parser) parseAliasStatement() Statement {
 func (p *Parser) parseShowStatement() Statement {
 	st := &ShowStatement{
 		Token: p.currentToken,
-		Shown: nil,
+		Shown: p.parseStringLiteralOrIdentifier(true),
 	}
-	if p.peekTokenIs(IdentifierTokenType) {
-		p.nextToken()
-		st.Shown = p.parseIdentifierExpression()
-	} else {
-		p.peekError(IdentifierTokenType)
+
+	if st.Shown == nil {
 		return nil
 	}
 
@@ -169,14 +166,8 @@ func (p *Parser) parseUseStatement() Statement {
 		Token: p.currentToken,
 		Used:  nil,
 	}
-	if p.peekTokenIs(IdentifierTokenType) {
-		p.nextToken()
-		st.Used = p.parseIdentifierExpression()
-	} else if p.peekTokenIs(STRING) {
-		p.nextToken()
-		st.Used = p.parseStringLiteral()
-	} else {
-		p.peekError(IdentifierTokenType)
+
+	if st.Used = p.parseStringLiteralOrIdentifier(true); st.Used == nil {
 		return nil
 	}
 
@@ -264,6 +255,10 @@ func (p *Parser) parseStringLiteralOrIdentifier(force bool) Expression {
 		p.nextToken()
 		return p.parseStringLiteral()
 	} else if p.peekTokenIs(IdentifierTokenType) {
+		p.nextToken()
+		return p.parseIdentifierExpression()
+	} else if p.peekToken.IsKeyword() {
+		// literals that collide with keyword may pass as identifiers
 		p.nextToken()
 		return p.parseIdentifierExpression()
 	} else {
