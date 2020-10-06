@@ -29,23 +29,16 @@ type Evaluator interface {
 type evalFunc func(vql.Node) vtp.Message
 
 type commandEvaluator struct {
-	counter       *atomicCounter
-	evalFunctions map[vql.TokenType]evalFunc
-	env           *environment
+	counter *atomicCounter
+	env     *environment
 }
 
 func newCommandEvaluator(env *environment) *commandEvaluator {
 	cp := &commandEvaluator{
-		counter:       &atomicCounter{},
-		evalFunctions: make(map[vql.TokenType]evalFunc),
-		env:           env,
+		counter: &atomicCounter{},
+		env:     env,
 	}
-	cp.evalFunctions[vql.SearchTokenType] = cp.evalSearchStatement
-	cp.evalFunctions[vql.ShowTokenType] = cp.evalShowIndicesStatement
-	cp.evalFunctions[vql.UseTokenType] = cp.evalUseStatement
-	cp.evalFunctions[vql.IndexTokenType] = cp.evalIndexStatement
-	cp.evalFunctions[vql.AliasTokenType] = cp.evalAliasStatement
-	cp.evalFunctions[vql.UnAliasTokenType] = cp.evalUnAliasStatement
+
 	return cp
 }
 
@@ -60,70 +53,85 @@ func (c *commandEvaluator) Eval(raw string) []vtp.Message {
 	}
 
 	for _, stmt := range query.Statements {
-		eval, ok := c.evalFunctions[vql.TokenType(stmt.Literal())]
-		var msg vtp.Message
-		if ok {
-			msg = eval(stmt)
-		}
-
-		if msg != nil {
-			msgs = append(msgs, msg)
+		if eval := c.evalStatement(stmt); eval != nil {
+			msgs = append(msgs, eval)
 		}
 	}
 	return msgs
 }
 
-func (c *commandEvaluator) evalUnAliasStatement(node vql.Node) vtp.Message {
-	q, _ := node.(*vql.UnAliasStatement)
-	var indexName string
-	if q.Index != nil {
-		indexName = q.Index.Literal()
+func (c *commandEvaluator) evalStatement(node vql.Node) vtp.Message {
+	switch s := node.(type) {
+	case *vql.SearchStatement:
+		return c.evalSearchStatement(s)
+	case *vql.ShowStatement:
+		return c.evalShowStatement(s)
+	case *vql.UseStatement:
+		return c.evalUseStatement(s)
+	case *vql.IndexStatement:
+		return c.evalIndexStatement(s)
+	case *vql.AliasStatement:
+		return c.evalAliasStatement(s)
+	case *vql.UnAliasStatement:
+		return c.evalUnAliasStatement(s)
+	default:
+		return nil
 	}
-	return vtp.NewUnAliasRequest(c.counter.Inc(), Version, indexName, q.Alias.Literal())
 }
 
-func (c *commandEvaluator) evalAliasStatement(node vql.Node) vtp.Message {
-	q, _ := node.(*vql.AliasStatement)
-	return vtp.NewAliasRequest(c.counter.Inc(), Version, q.Index.Literal(), q.Alias.Literal())
+func (c *commandEvaluator) evalUnAliasStatement(node *vql.UnAliasStatement) vtp.Message {
+	var indexName string
+	if node.Index != nil {
+		indexName = node.Index.Literal()
+	}
+	return vtp.NewUnAliasRequest(c.nextID(), Version, indexName, node.Alias.Literal())
 }
 
-func (c *commandEvaluator) evalIndexStatement(node vql.Node) vtp.Message {
-	q, _ := node.(*vql.IndexStatement)
+func (c *commandEvaluator) evalAliasStatement(node *vql.AliasStatement) vtp.Message {
+	return vtp.NewAliasRequest(c.nextID(), Version, node.Index.Literal(), node.Alias.Literal())
+}
+
+func (c *commandEvaluator) evalIndexStatement(node *vql.IndexStatement) vtp.Message {
 	format := entities.MimeText
-	if strings.ToLower(q.Format.Literal()) == "json" {
+	if strings.ToLower(node.Format.Literal()) == "json" {
 		format = entities.MimeJSON
 	}
-	return vtp.NewIndexRequest(c.counter.Inc(), Version, q.Index.Literal(), q.Aka.Literal(), q.Payload.Literal(), format)
+	return vtp.NewIndexRequest(
+		c.nextID(),
+		Version,
+		node.Index.Literal(),
+		node.Aka.Literal(),
+		node.Payload.Literal(),
+		format,
+	)
 }
 
-func (c *commandEvaluator) evalUseStatement(node vql.Node) vtp.Message {
-	q, _ := node.(*vql.UseStatement)
-	currentIndex := q.Used.Literal()
+func (c *commandEvaluator) evalUseStatement(node *vql.UseStatement) vtp.Message {
+	currentIndex := node.Used.Literal()
 	c.env.Index = &currentIndex
 	return nil
 }
 
-func (c *commandEvaluator) evalShowIndicesStatement(q vql.Node) vtp.Message {
-	return vtp.NewListIndicesRequest(c.counter.Inc(), Version)
+func (c *commandEvaluator) evalShowStatement(q vql.Node) vtp.Message {
+	return vtp.NewListIndicesRequest(c.nextID(), Version)
 }
 
-func (c *commandEvaluator) evalSearchStatement(node vql.Node) vtp.Message {
-	q, _ := node.(*vql.SearchStatement)
+func (c *commandEvaluator) evalSearchStatement(node *vql.SearchStatement) vtp.Message {
 	var index string
 	var engine search.EngineType
-	if q.Index == nil {
+	if node.Index == nil {
 		if c.env.Index == nil {
 			log.Println("SEARCH command requires a payload")
 			return nil
 		}
 		index = *c.env.Index
 	} else {
-		index = q.Index.Literal()
+		index = node.Index.Literal()
 	}
-	if q.Engine == nil {
+	if node.Engine == nil {
 		engine = search.Hits
 	} else {
-		switch strings.ToLower(q.Engine.Literal()) {
+		switch strings.ToLower(node.Engine.Literal()) {
 		case "hits":
 			engine = search.Hits
 		case "smart_hits":
@@ -135,10 +143,14 @@ func (c *commandEvaluator) evalSearchStatement(node vql.Node) vtp.Message {
 		}
 	}
 	return vtp.NewSearchRequest(
-		c.counter.Inc(),
+		c.nextID(),
 		Version,
 		uint8(engine),
 		index,
-		q.Payload.Literal(),
+		node.Payload.Literal(),
 	)
+}
+
+func (c *commandEvaluator) nextID() uint64 {
+	return c.counter.Inc()
 }
