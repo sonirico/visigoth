@@ -21,14 +21,14 @@ type Transport interface {
 }
 
 type VTPTransport struct {
-	Compiler vtp.Compiler
-	Parser   vtp.Parser
+	Compiler vtp.ProtoCompiler
+	Parser   vtp.ProtoParser
 }
 
 func NewVTPTransport() *VTPTransport {
 	return &VTPTransport{
-		Compiler: vtp.NewCompiler(binary.BigEndian),
-		Parser:   vtp.NewParser(binary.BigEndian),
+		Compiler: vtp.NewVTPCompiler(vtp.NewCompiler(binary.BigEndian)),
+		Parser:   vtp.NewVTPParser(vtp.NewParser(binary.BigEndian)),
 	}
 }
 

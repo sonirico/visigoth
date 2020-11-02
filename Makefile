@@ -95,7 +95,7 @@ setup:
 
 .PHONY: run-server
 run-server:
-	go run cmd/server/*.go
+	go run cmd/server/server.go
 
 .PHONY: run-client
 run-client:

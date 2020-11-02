@@ -26,20 +26,16 @@ type Evaluator interface {
 	Eval(string) []vtp.Message
 }
 
-type evalFunc func(vql.Node) vtp.Message
-
 type commandEvaluator struct {
 	counter *atomicCounter
 	env     *environment
 }
 
 func newCommandEvaluator(env *environment) *commandEvaluator {
-	cp := &commandEvaluator{
+	return &commandEvaluator{
 		counter: &atomicCounter{},
 		env:     env,
 	}
-
-	return cp
 }
 
 func (c *commandEvaluator) Eval(raw string) []vtp.Message {
@@ -112,8 +108,15 @@ func (c *commandEvaluator) evalUseStatement(node *vql.UseStatement) vtp.Message 
 	return nil
 }
 
-func (c *commandEvaluator) evalShowStatement(q vql.Node) vtp.Message {
-	return vtp.NewListIndicesRequest(c.nextID(), Version)
+func (c *commandEvaluator) evalShowStatement(q *vql.ShowStatement) vtp.Message {
+	switch q.Shown.Literal() {
+	case "aliases":
+		return vtp.NewListAliasesRequest(c.nextID(), Version)
+	case "indices", "indexes":
+		fallthrough
+	default:
+		return vtp.NewListIndicesRequest(c.nextID(), Version)
+	}
 }
 
 func (c *commandEvaluator) evalSearchStatement(node *vql.SearchStatement) vtp.Message {

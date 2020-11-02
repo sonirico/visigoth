@@ -64,6 +64,17 @@ type DropIndexResponse struct {
 
 func (d *DropIndexResponse) IsOk() bool { return d.Ok.Value == 1 }
 
+type ListAliasesResponseRow struct {
+	Alias   *StringType
+	Indices []*StringType
+}
+
+type ListAliasesResponse struct {
+	*Head
+
+	Aliases []*ListAliasesResponseRow
+}
+
 func NewHeadResponse(req Message) *Head {
 	msgType, err := LookupResponseMessageType(req.Type())
 	if err != nil {

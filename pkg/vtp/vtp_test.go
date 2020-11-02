@@ -16,6 +16,8 @@ var (
 	BigEndianParser = &parser{
 		endian: binary.BigEndian,
 	}
+	VTPCompiler = NewVTPCompiler(BigEndianCompiler)
+	VTPParser   = NewVTPParser(BigEndianParser)
 )
 
 func testHeadEquals(t *testing.T, one, other Message) bool {
@@ -204,6 +206,30 @@ func testHitsSearchResponse(t *testing.T, one, other *HitsSearchResponse) bool {
 	return true
 }
 
+func testListAliasesResponseEquals(t *testing.T, one, other *ListAliasesResponse) bool {
+	if len(one.Aliases) != len(other.Aliases) {
+		t.Errorf("list aliases response items length mismatch. %d vs %d",
+			len(one.Aliases), len(other.Aliases))
+		return false
+	}
+	for i, expectedAlias := range one.Aliases {
+		actualAlias := other.Aliases[i]
+
+		if expectedAlias.Alias.Value != actualAlias.Alias.Value {
+			t.Errorf("list aliases response. alias mismatch. want '%s', have '%s'",
+				expectedAlias.Alias.Value, actualAlias.Alias.Value)
+			return false
+		}
+
+		if len(expectedAlias.Indices) != len(actualAlias.Indices) {
+			t.Errorf("list aliases response items length mismatch. %d vs %d",
+				len(one.Aliases), len(other.Aliases))
+			return false
+		}
+	}
+	return true
+}
+
 func testMessageEquals(t *testing.T, one, other Message) bool {
 	t.Helper()
 
@@ -214,6 +240,10 @@ func testMessageEquals(t *testing.T, one, other Message) bool {
 	}
 
 	switch one.Type() {
+	case ListAliasesRes:
+		resOne := one.(*ListAliasesResponse)
+		resOther := one.(*ListAliasesResponse)
+		return testListAliasesResponseEquals(t, resOne, resOther)
 	case StatusRes:
 		statusRes := one.(*StatusResponse)
 		statusOtherRes := other.(*StatusResponse)
@@ -266,9 +296,63 @@ func TestCompile_BigEndian(t *testing.T) {
 		name         string
 		message      Message
 		expectedCode []byte
-		compiler     Compiler
-		parser       Parser
+		compiler     ProtoCompiler
+		parser       ProtoParser
 	}{
+		{
+			name: "compile and parse list aliases response",
+			message: &ListAliasesResponse{
+				Head: &Head{
+					id:          &UInt64Type{1},
+					version:     &ByteType{2},
+					messageType: MessageTypeToByte(ListAliasesRes),
+				},
+				Aliases: []*ListAliasesResponseRow{
+					{Alias: &StringType{Value: "alias"}, Indices: []*StringType{
+						{Value: "idx"},
+						{Value: "idy"},
+					}},
+					{Alias: &StringType{Value: "alias2"}, Indices: []*StringType{
+						{Value: "idz"},
+					}},
+				},
+			},
+			expectedCode: []byte{
+				0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1,
+				0x2,
+				byte(ListAliasesRes),
+				0x0, 0x0, 0x0, 0x2, // 2 rows
+				0x5, // "alias" length
+				byte('a'),
+				byte('l'),
+				byte('i'),
+				byte('a'),
+				byte('s'),
+				0x2, // index count
+				0x3, // "idx" length
+				byte('i'),
+				byte('d'),
+				byte('x'),
+				0x3, // "idy" length
+				byte('i'),
+				byte('d'),
+				byte('y'),
+				0x6, // "alias2" length
+				byte('a'),
+				byte('l'),
+				byte('i'),
+				byte('a'),
+				byte('s'),
+				byte('2'),
+				0x1, // index count
+				0x3, // "idz" length
+				byte('i'),
+				byte('d'),
+				byte('z'),
+			},
+			compiler: VTPCompiler,
+			parser:   VTPParser,
+		},
 		{
 			name: "compile and parse status response",
 			message: &StatusResponse{
@@ -285,8 +369,8 @@ func TestCompile_BigEndian(t *testing.T) {
 				byte(StatusRes),
 				0x1,
 			},
-			compiler: BigEndianCompiler,
-			parser:   BigEndianParser,
+			compiler: VTPCompiler,
+			parser:   VTPParser,
 		},
 		{
 			name: "compile and parse drop index response",
@@ -306,8 +390,8 @@ func TestCompile_BigEndian(t *testing.T) {
 				0x1,
 				0x7, byte('c'), byte('o'), byte('u'), byte('r'), byte('s'), byte('e'), byte('s'),
 			},
-			compiler: BigEndianCompiler,
-			parser:   BigEndianParser,
+			compiler: VTPCompiler,
+			parser:   VTPParser,
 		},
 		{
 			name: "compile and parse drop index request",
@@ -325,8 +409,8 @@ func TestCompile_BigEndian(t *testing.T) {
 				byte(DropReq),
 				0x7, byte('c'), byte('o'), byte('u'), byte('r'), byte('s'), byte('e'), byte('s'),
 			},
-			compiler: BigEndianCompiler,
-			parser:   BigEndianParser,
+			compiler: VTPCompiler,
+			parser:   VTPParser,
 		},
 		{
 			name: "compile and parse search hits response",
@@ -363,8 +447,8 @@ func TestCompile_BigEndian(t *testing.T) {
 				byte('c'), byte('o'), byte('n'), byte('t'), byte('e'), byte('n'), byte('t'), // document content
 				// end row 1
 			},
-			compiler: BigEndianCompiler,
-			parser:   BigEndianParser,
+			compiler: VTPCompiler,
+			parser:   VTPParser,
 		},
 		{
 			name: "compile and parse list indices response",
@@ -385,8 +469,8 @@ func TestCompile_BigEndian(t *testing.T) {
 				0x0, 0x0, 0x0, 0x01, // string length
 				0x7, byte('c'), byte('o'), byte('u'), byte('r'), byte('s'), byte('e'), byte('s'),
 			},
-			compiler: BigEndianCompiler,
-			parser:   BigEndianParser,
+			compiler: VTPCompiler,
+			parser:   VTPParser,
 		},
 		{
 			name: "compile and parse list indices request",
@@ -402,8 +486,8 @@ func TestCompile_BigEndian(t *testing.T) {
 				0x2,
 				byte(ListReq),
 			},
-			compiler: BigEndianCompiler,
-			parser:   BigEndianParser,
+			compiler: VTPCompiler,
+			parser:   VTPParser,
 		},
 		{
 			name: "compile and parse unalias request",
@@ -423,8 +507,8 @@ func TestCompile_BigEndian(t *testing.T) {
 				0x5, byte('i'), byte('n'), byte('d'), byte('e'), byte('x'),
 				0x7, byte('a'), byte('l'), byte('i'), byte('a'), byte('s'), byte('e'), byte('s'),
 			},
-			compiler: BigEndianCompiler,
-			parser:   BigEndianParser,
+			compiler: VTPCompiler,
+			parser:   VTPParser,
 		},
 		{
 			name: "compile and parse index request",
@@ -451,8 +535,8 @@ func TestCompile_BigEndian(t *testing.T) {
 				byte(' '), byte('d'), byte('e'), byte(' '),
 				byte('h'), byte('i'), byte('n'), byte('c'), byte('a'), byte('r'),
 			},
-			compiler: BigEndianCompiler,
-			parser:   BigEndianParser,
+			compiler: VTPCompiler,
+			parser:   VTPParser,
 		},
 		{
 			name: "compile and parse search request",
@@ -475,8 +559,8 @@ func TestCompile_BigEndian(t *testing.T) {
 				0x00, 0x00, 0x00, 0x04,
 				byte('h'), byte('o'), byte('p'), byte('e'),
 			},
-			compiler: BigEndianCompiler,
-			parser:   BigEndianParser,
+			compiler: VTPCompiler,
+			parser:   VTPParser,
 		},
 		{
 			name: "compile and parse alias request",
@@ -496,8 +580,8 @@ func TestCompile_BigEndian(t *testing.T) {
 				0x0A, byte('i'), byte('n'), byte('d'), byte('e'), byte('x'), byte('_'), byte('n'), byte('a'), byte('m'), byte('e'),
 				0x05, byte('a'), byte('l'), byte('i'), byte('a'), byte('s'),
 			},
-			compiler: BigEndianCompiler,
-			parser:   BigEndianParser,
+			compiler: VTPCompiler,
+			parser:   VTPParser,
 		},
 	}
 	for _, test := range tests {

@@ -21,6 +21,8 @@ const (
 	ListReq
 	ListRes
 	UnAliasReq
+	ListAliasesReq
+	ListAliasesRes
 )
 
 var HeadLength = 8 + 1 + 1
@@ -99,4 +101,8 @@ type BlobRequest struct {
 type DropIndexRequest struct {
 	*Head
 	Index *StringType
+}
+
+type ListAliasesRequest struct {
+	*Head
 }

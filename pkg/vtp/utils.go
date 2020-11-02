@@ -131,3 +131,13 @@ func NewStatusResponse(id uint64, version uint8, ok bool) *StatusResponse {
 		Ok: &ByteType{Value: okVal},
 	}
 }
+
+func NewListAliasesRequest(id uint64, version uint8) *ListAliasesRequest {
+	return &ListAliasesRequest{
+		&Head{
+			id:          &UInt64Type{id},
+			version:     &ByteType{version},
+			messageType: MessageTypeToByte(ListAliasesReq),
+		},
+	}
+}

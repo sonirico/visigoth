@@ -9,16 +9,18 @@ const (
 	Version = 0
 )
 
+// TODO: Split interface
 type Compiler interface {
-	Compile(io.Writer, Message) error
 	CompileUInt8(io.Writer, uint8) error
 	CompileUInt32(io.Writer, uint32) error
 	CompileUInt64(io.Writer, uint64) error
+	CompileString(io.Writer, string) error
 	CompileByteType(io.Writer, *ByteType) error
 	CompileUInt32Type(io.Writer, *UInt32Type) error
 	CompileUInt64Type(io.Writer, *UInt64Type) error
 	CompileMessageType(io.Writer, MessageType) error
 	CompileStringType(io.Writer, *StringType) error
+	CompileVarcharType(io.Writer, *StringType) error
 	CompileBlobType(io.Writer, *BlobType) error
 }
 
@@ -55,6 +57,13 @@ func (c *compiler) CompileUInt64(w io.Writer, u64 uint64) error {
 	return nil
 }
 
+func (c *compiler) CompileString(w io.Writer, s string) error {
+	if _, err := w.Write([]byte(s)); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *compiler) CompileByteType(w io.Writer, bt *ByteType) error {
 	return c.CompileUInt8(w, bt.Value)
 }
@@ -78,6 +87,17 @@ func (c *compiler) CompileStringType(w io.Writer, s *StringType) error {
 	return nil
 }
 
+func (c *compiler) CompileVarcharType(w io.Writer, s *StringType) error {
+	if err := c.CompileUInt32(w, uint32(len(s.Value))); err != nil {
+		return err
+	}
+
+	if _, err := w.Write([]byte(s.Value)); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *compiler) CompileBlobType(w io.Writer, b *BlobType) error {
 	if _, err := w.Write(b.Value); err != nil {
 		return err
@@ -87,10 +107,6 @@ func (c *compiler) CompileBlobType(w io.Writer, b *BlobType) error {
 
 func (c *compiler) CompileHead(w io.Writer, m Message, comp Compiler) error {
 	return compileHead(w, m, comp)
-}
-
-func (c *compiler) Compile(w io.Writer, msg Message) error {
-	return Compile(w, msg, c)
 }
 
 func compileHead(w io.Writer, m Message, comp Compiler) error {
@@ -297,7 +313,31 @@ func compileDropIndexResponse(w io.Writer, res *DropIndexResponse, comp Compiler
 	return nil
 }
 
-func Compile(w io.Writer, msg Message, c Compiler) error {
+func compileListAliasesRequest(w io.Writer, req *ListAliasesRequest, comp Compiler) error {
+	return nil
+}
+
+func compileListAliasesResponse(w io.Writer, res *ListAliasesResponse, comp ProtoCompiler) error {
+	if err := comp.CompileUInt32(w, uint32(len(res.Aliases))); err != nil {
+		return err
+	}
+	for _, item := range res.Aliases {
+		if err := comp.CompileIndexName(w, item.Alias); err != nil {
+			return err
+		}
+		if err := comp.CompileUInt8(w, uint8(len(item.Indices))); err != nil {
+			return err
+		}
+		for _, ind := range item.Indices {
+			if err := comp.CompileIndexName(w, ind); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func Compile(w io.Writer, msg Message, c ProtoCompiler) error {
 	if err := compileHead(w, msg, c); err != nil {
 		return err
 	}
@@ -324,7 +364,38 @@ func Compile(w io.Writer, msg Message, c Compiler) error {
 		return compileDropIndexRequest(w, val, c)
 	case *DropIndexResponse:
 		return compileDropIndexResponse(w, val, c)
+	case *ListAliasesRequest:
+		return compileListAliasesRequest(w, val, c)
+	case *ListAliasesResponse:
+		return compileListAliasesResponse(w, val, c)
 	default:
 		return nil
+	}
+}
+
+type ProtoCompiler interface {
+	Compiler
+	Compile(io.Writer, Message) error
+	CompileIndexName(w io.Writer, name *StringType) error
+}
+
+type vtpCompiler struct {
+	Compiler
+}
+
+func (v *vtpCompiler) CompileIndexName(w io.Writer, index *StringType) error {
+	if err := v.CompileUInt8(w, byte(index.Len())); err != nil {
+		return err
+	}
+	return v.CompileString(w, index.Value)
+}
+
+func (v *vtpCompiler) Compile(w io.Writer, msg Message) error {
+	return Compile(w, msg, v)
+}
+
+func NewVTPCompiler(comp Compiler) *vtpCompiler {
+	return &vtpCompiler{
+		Compiler: comp,
 	}
 }

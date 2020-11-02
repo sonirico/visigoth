@@ -8,9 +8,6 @@ import (
 	"github.com/sonirico/visigoth/internal/search"
 )
 
-type ParserFunc func(head Message, src io.Reader, p Parser) (Message, error)
-
-// TODO: Consider to have both BytesParser and VtpParser
 type Parser interface {
 	ParseUInt8(io.Reader) (uint8, error)
 	ParseUInt32(io.Reader) (uint32, error)
@@ -23,7 +20,6 @@ type Parser interface {
 	ParseStringType(io.Reader) (*StringType, error)
 	ParseTextType(io.Reader) (*StringType, error)
 	ParseLongTextType(io.Reader) (*StringType, error)
-	Parse(io.Reader) (Message, error)
 }
 
 type parser struct {
@@ -123,10 +119,6 @@ func (p *parser) ParseTextType(src io.Reader) (*StringType, error) {
 func (p *parser) ParseLongTextType(src io.Reader) (*StringType, error) {
 	str, err := p.ParseLongText(src)
 	return &StringType{Value: str}, err
-}
-
-func (p *parser) Parse(src io.Reader) (Message, error) {
-	return Parse(src, p)
 }
 
 func ParseListIndicesResponse(head *Head, src io.Reader, parser Parser) (*ListIndicesResponse, error) {
@@ -292,6 +284,44 @@ func ParseDropIndexResponse(head *Head, src io.Reader, parser Parser) (*DropInde
 	return &DropIndexResponse{Head: head, Index: index, Ok: ok}, nil
 }
 
+func ParseListAliasesRequest(head *Head) (*ListAliasesRequest, error) {
+	return &ListAliasesRequest{Head: head}, nil
+}
+
+func ParseListAliasesResponse(head *Head, src io.Reader, parser ProtoParser) (*ListAliasesResponse, error) {
+	aliasesCount, err := parser.ParseUInt32(src)
+	if err != nil {
+		return nil, err
+	}
+	aliases := make([]*ListAliasesResponseRow, aliasesCount, aliasesCount)
+	for aliasesCount > 0 {
+		alias, err := parser.ParseIndexName(src)
+		if err != nil {
+			return nil, err
+		}
+		indicesCount, err := parser.ParseUInt8(src)
+		if err != nil {
+			return nil, err
+		}
+		indices := make([]*StringType, indicesCount, indicesCount)
+		for indicesCount > 0 {
+			index, err := parser.ParseIndexName(src)
+			if err != nil {
+				return nil, err
+			}
+			indices[indicesCount-1] = index
+			indicesCount--
+		}
+		row := &ListAliasesResponseRow{
+			Alias:   alias,
+			Indices: indices,
+		}
+		aliases[aliasesCount-1] = row
+		aliasesCount--
+	}
+	return &ListAliasesResponse{Head: head, Aliases: aliases}, nil
+}
+
 func ParseHead(src io.Reader, parser Parser) (*Head, error) {
 	head := new(Head)
 	id, err := parser.ParseUInt64Type(src)
@@ -312,7 +342,7 @@ func ParseHead(src io.Reader, parser Parser) (*Head, error) {
 	return head, nil
 }
 
-func ParseBody(src io.Reader, head *Head, parser Parser) (Message, error) {
+func ParseBody(src io.Reader, head *Head, parser ProtoParser) (Message, error) {
 	switch head.Type() {
 	case StatusRes:
 		return ParseStatusResponse(head, src, parser)
@@ -334,12 +364,16 @@ func ParseBody(src io.Reader, head *Head, parser Parser) (Message, error) {
 		return ParseDropIndexRequest(head, src, parser)
 	case DropRes:
 		return ParseDropIndexResponse(head, src, parser)
+	case ListAliasesReq:
+		return ParseListAliasesRequest(head)
+	case ListAliasesRes:
+		return ParseListAliasesResponse(head, src, parser)
 	default:
 		return nil, nil
 	}
 }
 
-func Parse(src io.Reader, parser Parser) (Message, error) {
+func Parse(src io.Reader, parser ProtoParser) (Message, error) {
 	head, err := ParseHead(src, parser)
 	if err != nil {
 		return nil, err
@@ -347,7 +381,7 @@ func Parse(src io.Reader, parser Parser) (Message, error) {
 	return ParseBody(src, head, parser)
 }
 
-func ParseStream(src io.Reader, parser Parser, queue chan<- Message) error {
+func ParseStream(src io.Reader, parser ProtoParser, queue chan<- Message) error {
 	for {
 		message, err := Parse(src, parser)
 		if err != nil {
@@ -355,4 +389,34 @@ func ParseStream(src io.Reader, parser Parser, queue chan<- Message) error {
 		}
 		queue <- message
 	}
+}
+
+type ProtoParser interface {
+	Parser
+	Parse(io.Reader) (Message, error)
+	ParseIndexName(s io.Reader) (*StringType, error)
+}
+
+type vtpParser struct {
+	Parser
+}
+
+func NewVTPParser(parser Parser) *vtpParser {
+	return &vtpParser{Parser: parser}
+}
+
+func (p *vtpParser) ParseIndexName(src io.Reader) (*StringType, error) {
+	le, err := p.ParseUInt8(src)
+	if err != nil {
+		return nil, err
+	}
+	data := make([]byte, le, le)
+	if _, err := io.ReadFull(src, data); err != nil {
+		return nil, err
+	}
+	return &StringType{Value: string(data)}, nil
+}
+
+func (p *vtpParser) Parse(src io.Reader) (Message, error) {
+	return Parse(src, p)
 }
