@@ -5,10 +5,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/sonirico/visigoth/pkg/vtp"
 	"io"
 	"log"
 	"sync"
+
+	"github.com/sonirico/visigoth/pkg/vtp"
 )
 
 const (
@@ -105,6 +106,13 @@ func Print(out io.Writer, msg vtp.Message, group *sync.WaitGroup) {
 		for i, index := range res.Indices {
 			printSafe(out, fmt.Sprintf("%d) %s\n", i+1, index.Value))
 		}
+	case vtp.ListAliasesRes:
+		res, _ := msg.(*vtp.ListAliasesResponse)
+		for _, alias := range res.Aliases {
+			for _, index := range alias.Indices {
+				printSafeF(out, "%s -> %s\n", alias.Alias.Value, index.Value)
+			}
+		}
 	case vtp.SearchRes:
 		switch res := msg.(type) {
 		case *vtp.HitsSearchResponse:
@@ -126,5 +134,11 @@ func printSafe(out io.Writer, msg string) {
 	if _, err := out.Write([]byte(msg)); err != nil {
 		log.Printf("unable to write '%s'\n", err)
 		log.Println(msg)
+	}
+}
+
+func printSafeF(out io.Writer, placeholder string, args ...interface{}) {
+	if _, err := fmt.Fprintf(out, placeholder, args...); err != nil {
+		log.Printf("unable to write '%s'\n", err)
 	}
 }

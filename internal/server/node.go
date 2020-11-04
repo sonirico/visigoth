@@ -2,10 +2,11 @@ package server
 
 import (
 	"bytes"
-	"github.com/sonirico/visigoth/internal/loaders"
-	"github.com/sonirico/visigoth/pkg/entities"
 	"log"
 	"strings"
+
+	"github.com/sonirico/visigoth/internal/loaders"
+	"github.com/sonirico/visigoth/pkg/entities"
 
 	"github.com/sonirico/visigoth/internal/repos"
 	"github.com/sonirico/visigoth/internal/search"
@@ -58,6 +59,8 @@ func (n *node) Run(in chan vtp.Message, out chan vtp.Message, cfg *NodeConfig) {
 
 func (n *node) dispatch(req vtp.Message) vtp.Message {
 	switch req.Type() {
+	case vtp.ListAliasesReq:
+		return n.handleListAliasesRequest(req)
 	case vtp.ListReq:
 		return n.handleListIndicesRequest(req)
 	case vtp.SearchReq:
@@ -181,4 +184,25 @@ func (n *node) handleSearchRequest(msg vtp.Message) vtp.Message {
 	}
 
 	return res
+}
+
+func (n *node) handleListAliasesRequest(msg vtp.Message) *vtp.ListAliasesResponse {
+	aliases := n.repo.ListAliases()
+	vtpAliases := make([]*vtp.ListAliasesResponseRow, len(aliases.Aliases), len(aliases.Aliases))
+	for i, alias := range aliases.Aliases {
+		vtpIndices := make([]*vtp.StringType, len(alias.Indices))
+		for j, index := range alias.Indices {
+			vtpIndices[j] = &vtp.StringType{Value: index}
+		}
+
+		vtpAliases[i] = &vtp.ListAliasesResponseRow{
+			Alias:   &vtp.StringType{Value: alias.Alias},
+			Indices: vtpIndices,
+		}
+	}
+
+	return &vtp.ListAliasesResponse{
+		Head:    vtp.NewHeadResponse(msg),
+		Aliases: vtpAliases,
+	}
 }

@@ -2,16 +2,19 @@ package repos
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/sonirico/visigoth/internal/search"
 	"github.com/sonirico/visigoth/pkg/entities"
-	"sync"
-)
 
-import vindex "github.com/sonirico/visigoth/internal/index"
-import vtoken "github.com/sonirico/visigoth/internal/tokenizer"
+	vindex "github.com/sonirico/visigoth/internal/index"
+
+	vtoken "github.com/sonirico/visigoth/internal/tokenizer"
+)
 
 type IndexRepo interface {
 	List() []string
+	ListAliases() AliasesResult
 	Has(name string) bool
 	HasAlias(name string) bool
 	Alias(alias string, in string) bool
@@ -20,6 +23,15 @@ type IndexRepo interface {
 	Search(index string, terms string, engine search.Engine) (entities.Iterator, error)
 	Rename(old string, new string) bool
 	Drop(in string) bool
+}
+
+type AliasesResultRow struct {
+	Alias   string
+	Indices []string
+}
+
+type AliasesResult struct {
+	Aliases []AliasesResultRow
 }
 
 // indexRepo handles a collection of indexes
@@ -245,6 +257,18 @@ func (h *indexRepo) Drop(indexName string) bool {
 	h.indicesMu.Unlock()
 	h.aliasesMu.Unlock()
 	return true
+}
+
+func (h *indexRepo) ListAliases() AliasesResult {
+	h.aliasesMu.RLock()
+	aliases := make([]AliasesResultRow, len(h.aliases), len(h.aliases))
+	i := 0
+	for k, v := range h.aliases {
+		aliases[i] = AliasesResultRow{Alias: k, Indices: v}
+		i++
+	}
+	h.aliasesMu.RUnlock()
+	return AliasesResult{Aliases: aliases}
 }
 
 func (h *indexRepo) getIndices(name string) ([]vindex.Index, bool) {

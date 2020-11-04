@@ -5,12 +5,13 @@ import "errors"
 var (
 	UnknownMessageType     = errors.New("unknown message type")
 	responseMessageTypeMap = map[MessageType]MessageType{
-		ListReq:    ListRes,
-		SearchReq:  SearchRes,
-		IndexReq:   StatusRes,
-		AliasReq:   StatusRes,
-		UnAliasReq: StatusRes,
-		DropReq:    DropRes,
+		ListReq:        ListRes,
+		SearchReq:      SearchRes,
+		IndexReq:       StatusRes,
+		AliasReq:       StatusRes,
+		UnAliasReq:     StatusRes,
+		DropReq:        DropRes,
+		ListAliasesReq: ListAliasesRes,
 	}
 )
 
