@@ -5,7 +5,7 @@ XC_ARCH := 386 amd64 arm
 LD_FLAGS := -X main.version=$(VERSION) -s -w
 SOURCE_FILES ?=./internal/... ./pkg/...
 TEST_PATTERN ?=.
-TEST_OPTIONS ?=-v -failfast -race
+TEST_OPTIONS ?=-v -failfast -race -bench=. -benchtime=1000000x -benchmem
 TEST_TIMEOUT ?=2m
 LINT_VERSION := 1.15.0
 

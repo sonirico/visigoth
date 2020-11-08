@@ -8,6 +8,7 @@ if [ -z "$TEST_PATTERN" ]; then
 fi
 
 if [ -z "$1" ]; then
+    echo go test ${TEST_OPTIONS} ${SOURCE_FILES} -run ${TEST_PATTERN} -timeout=${TEST_TIMEOUT}
     go test ${TEST_OPTIONS} ${SOURCE_FILES} -run ${TEST_PATTERN} -timeout=${TEST_TIMEOUT}
 else
     go test "$TEST_OPTIONS" "$SOURCE_FILES" -run "$TEST_PATTERN" -timeout="$TEST_TIMEOUT" 2>&1 | go-junit-report > report.xml
