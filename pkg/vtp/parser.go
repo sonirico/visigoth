@@ -1,6 +1,7 @@
 package vtp
 
 import (
+	"context"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -381,13 +382,20 @@ func Parse(src io.Reader, parser ProtoParser) (Message, error) {
 	return ParseBody(src, head, parser)
 }
 
-func ParseStream(src io.Reader, parser ProtoParser, queue chan<- Message) error {
+func ParseStream(ctx context.Context, src io.Reader, parser ProtoParser, queue chan<- Message) error {
 	for {
-		message, err := Parse(src, parser)
-		if err != nil {
-			return err
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+			message, err := Parse(src, parser)
+
+			if err != nil {
+				return err
+			}
+
+			queue <- message
 		}
-		queue <- message
 	}
 }
 

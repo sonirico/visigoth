@@ -23,6 +23,7 @@ type NodeConfig struct {
 	tracer tracer
 }
 
+// Node is the internal server that dispatches requests in vtp format
 type Node interface {
 	Run(in chan vtp.Message, out chan vtp.Message, cfg *NodeConfig)
 }
@@ -37,9 +38,7 @@ type node struct {
 }
 
 func NewNode(repo repos.IndexRepo) Node {
-	return &node{
-		repo: repo,
-	}
+	return &node{repo: repo}
 }
 
 func (n *node) Run(in chan vtp.Message, out chan vtp.Message, cfg *NodeConfig) {

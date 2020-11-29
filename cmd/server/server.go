@@ -1,15 +1,16 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
-	"github.com/sonirico/visigoth/pkg/entities"
-	"log"
-	"net/http"
-	"strings"
-
 	"github.com/sonirico/visigoth/internal/repos"
 	"github.com/sonirico/visigoth/internal/server"
+	"github.com/sonirico/visigoth/pkg/entities"
+	"log"
+	"os"
+	"os/signal"
+	"strings"
 )
 
 var (
@@ -36,12 +37,15 @@ func init() {
 }
 
 func main() {
+	signals := make(chan os.Signal)
+	signal.Notify(signals, os.Kill, os.Interrupt)
+	ctx, cancel := context.WithCancel(context.Background())
 	repo := repos.NewIndexRepo()
 	node := server.NewNode(repo)
 	transporter := server.NewVTPTransport()
 	tcpServer := server.NewTcpServer(bindToTcp, node, transporter)
-	httpServer := server.NewHttpServer(repo)
-	done := make(chan bool)
+	httpServer := server.NewHttpServer(bindToHttp, repo)
+	done := make(chan struct{})
 
 	go func() {
 		log.Println("indexing debug documents...")
@@ -51,17 +55,21 @@ func main() {
 
 	go func() {
 		log.Println("tcp server listening on ", bindToTcp)
-		tcpServer.Serve()
-		done <- true
+		tcpServer.Serve(ctx)
+		log.Println("tcp server shutdown")
 	}()
 
 	go func() {
 		log.Println("http server listening on ", bindToHttp)
-		err := http.ListenAndServe(bindToHttp, httpServer)
-		done <- true
-		if err != nil {
-			log.Fatal(err)
-		}
+		httpServer.Serve(ctx)
+		log.Println("http server shutdown")
+	}()
+
+	go func() {
+		sig := <-signals
+		log.Println("server received signal", sig)
+		cancel()
+		close(done)
 	}()
 
 	<-done

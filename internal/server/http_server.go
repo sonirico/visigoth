@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/sonirico/visigoth/internal/repos"
@@ -39,29 +40,17 @@ var (
 		Status: "ok",
 	})
 	indexDoesNotExistResponse, _ = json.Marshal(ErrorResponse{
-		"Index not found",
+		Message: "Index not found",
 	})
 	defaultEngine     = search.HitsSearchEngine
 	defaultSerializer = search.JsonHitsSearchResultSerializer
 )
 
-type httpServer struct {
+type apiController struct {
 	repo repos.IndexRepo
 }
 
-func NewHttpServer(repo repos.IndexRepo) http.Handler {
-	server := &httpServer{
-		repo: repo,
-	}
-	mux := http.NewServeMux()
-	mux.HandleFunc("/api/search/", server.handleSearch)
-	mux.HandleFunc("/api/index/", server.handleIndex)
-	mux.HandleFunc("/api/alias/", server.handleAlias)
-	mux.HandleFunc("/_health/", server.handleHealth)
-	return mux
-}
-
-func (s *httpServer) handleAlias(w http.ResponseWriter, r *http.Request) {
+func (s *apiController) handleAlias(w http.ResponseWriter, r *http.Request) {
 	switch verb := r.Method; {
 	case verb == http.MethodDelete:
 		w.Header().Set("content-type", "application/json")
@@ -82,7 +71,7 @@ func (s *httpServer) handleAlias(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		payload := &AliasRequestPayload{}
+		payload := new(AliasRequestPayload)
 		body, _ := ioutil.ReadAll(r.Body)
 		if err := json.Unmarshal(body, payload); err != nil {
 			w.WriteHeader(http.StatusUnprocessableEntity)
@@ -104,7 +93,7 @@ func (s *httpServer) handleAlias(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *httpServer) handleHealth(w http.ResponseWriter, r *http.Request) {
+func (s *apiController) handleHealth(w http.ResponseWriter, r *http.Request) {
 	if http.MethodGet != r.Method {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -117,7 +106,7 @@ func (s *httpServer) handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *httpServer) handleSearch(w http.ResponseWriter, r *http.Request) {
+func (s *apiController) handleSearch(w http.ResponseWriter, r *http.Request) {
 	if http.MethodGet != r.Method {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -159,7 +148,7 @@ func (s *httpServer) handleSearch(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("]}"))
 }
 
-func (s *httpServer) handleIndex(w http.ResponseWriter, r *http.Request) {
+func (s *apiController) handleIndex(w http.ResponseWriter, r *http.Request) {
 	switch v := r.Method; {
 	case v == http.MethodDelete:
 		iname, err := parseIndex(r.URL.Path) // TODO: validate index name
@@ -168,6 +157,7 @@ func (s *httpServer) handleIndex(w http.ResponseWriter, r *http.Request) {
 			_, _ = w.Write(indexDoesNotExistResponse)
 			return
 		}
+
 		if s.repo.Drop(iname) {
 			w.WriteHeader(http.StatusNoContent)
 		} else {
@@ -181,7 +171,7 @@ func (s *httpServer) handleIndex(w http.ResponseWriter, r *http.Request) {
 			_, _ = w.Write(indexDoesNotExistResponse)
 			return
 		}
-		payload := &PutRequestPayload{}
+		payload := new(PutRequestPayload)
 		body, _ := ioutil.ReadAll(r.Body) // TODO: Streaming
 		if err := json.Unmarshal(body, payload); err != nil {
 			w.WriteHeader(http.StatusUnprocessableEntity)
@@ -197,4 +187,43 @@ func (s *httpServer) handleIndex(w http.ResponseWriter, r *http.Request) {
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
+}
+
+func (s *apiController) Handler() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/search/", s.handleSearch)
+	mux.HandleFunc("/api/index/", s.handleIndex)
+	mux.HandleFunc("/api/alias/", s.handleAlias)
+	mux.HandleFunc("/_health/", s.handleHealth)
+	return mux
+}
+
+func NewApiController(repo repos.IndexRepo) *apiController {
+	return &apiController{repo: repo}
+}
+
+type httpServer struct {
+	addr string
+	ctrl *apiController
+}
+
+func (s *httpServer) Serve(ctx context.Context) {
+	handler := s.ctrl.Handler()
+	server := &http.Server{Addr: s.addr, Handler: handler}
+	go func() {
+		if err := server.ListenAndServe(); err != nil {
+			log.Println("apiController, listenAndServeError", err)
+		}
+
+	}()
+	select {
+	case <-ctx.Done():
+		if err := server.Shutdown(ctx); err != nil {
+			log.Println("htpServer, error on shutdown", err)
+		}
+	}
+}
+
+func NewHttpServer(addr string, repo repos.IndexRepo) Server {
+	return &httpServer{addr: addr, ctrl: NewApiController(repo)}
 }

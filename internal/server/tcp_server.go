@@ -1,17 +1,18 @@
 package server
 
 import (
+	"context"
 	"io"
 	"log"
 	"net"
 )
 
 type Server interface {
-	Serve()
+	Serve(ctx context.Context)
 }
 
 type handler interface {
-	Handle(io.ReadWriteCloser, Node)
+	Handle(context.Context, io.ReadWriteCloser, Node)
 }
 
 type TcpServer struct {
@@ -24,15 +25,15 @@ func NewTcpServer(url string, node Node, tr *VTPTransport) *TcpServer {
 	return &TcpServer{url: url, node: node, transport: tr}
 }
 
-func (s *TcpServer) Serve() {
+func (s *TcpServer) Serve(ctx context.Context) {
 	link, err := net.Listen("tcp", s.url)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("tcpServer, listen", err)
 	}
 
 	defer func(listener net.Listener) {
 		if err := listener.Close(); err != nil {
-			log.Fatalln(err)
+			log.Fatalln("tcpServer, serve", err)
 		}
 	}(link)
 
@@ -40,16 +41,24 @@ func (s *TcpServer) Serve() {
 
 	for {
 		conn, err := link.Accept()
-		if err != nil {
-			log.Println("error on accept")
-			log.Fatalln(err)
+		select {
+		case <-ctx.Done():
+			if err := conn.Close(); err != nil {
+				log.Println("tcpserver, shutdown", err)
+			}
+			return
+		default:
+			if err != nil {
+				log.Println("error on accept")
+				log.Fatalln(err)
+			}
+			client := NewTcpClient(clientCounter, s.transport)
+			go s.accept(ctx, conn, client)
+			clientCounter++
 		}
-		client := NewTcpClient(clientCounter, s.transport)
-		go s.accept(conn, client)
-		clientCounter++
 	}
 }
 
-func (s *TcpServer) accept(wire io.ReadWriteCloser, h handler) {
-	h.Handle(wire, s.node)
+func (s *TcpServer) accept(ctx context.Context, wire io.ReadWriteCloser, h handler) {
+	h.Handle(ctx, wire, s.node)
 }
