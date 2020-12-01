@@ -21,7 +21,7 @@ func assertTokenResult(t *testing.T, actual, expected [][]byte) bool {
 		aitem := actual[index]
 		if 0 != bytes.Compare(aitem, eitem) {
 			t.Errorf("unexpected token literal, want '%s', have '%s'", string(eitem), string(aitem))
-			t.Errorf("unexpected token literal, want '%x', have '%x'", (eitem), (aitem))
+			t.Errorf("unexpected token literal, want '%x', have '%x'", eitem, aitem)
 			return false
 		}
 	}
@@ -40,7 +40,7 @@ func Test_SimpleTokenizer_Tokenize_ascii(t *testing.T) {
 		b("simple"),
 		b("sentence"),
 	}
-	actual := tkr.Tokenize(payload)
+	actual := tkr.TokenizeText(payload)
 
 	if !assertTokenResult(t, actual, expected) {
 		t.FailNow()
@@ -59,7 +59,7 @@ func Test_SimpleTokenizer_Tokenize_utf8(t *testing.T) {
 		b("la"),
 		b("sabana"),
 	}
-	actual := tkr.Tokenize(payload)
+	actual := tkr.TokenizeText(payload)
 
 	if !assertTokenResult(t, actual, expected) {
 		t.FailNow()
@@ -68,7 +68,7 @@ func Test_SimpleTokenizer_Tokenize_utf8(t *testing.T) {
 
 func Test_StopWordsTokenizer_Tokenize_utf8(t *testing.T) {
 	stopWords := []string{"el", "la", "por"}
-	tkr := NewStopWordsTokenizer(stopWords)
+	tkr := NewStopWordsTokenizerFilter(stopWords, NewSimpleTokenizer())
 
 	payload := b(`El ñu corría por la SABANA`)
 	expected := [][]byte{
@@ -76,7 +76,7 @@ func Test_StopWordsTokenizer_Tokenize_utf8(t *testing.T) {
 		b("corria"),
 		b("sabana"),
 	}
-	actual := tkr.Tokenize(payload)
+	actual := tkr.TokenizeText(payload)
 
 	if !assertTokenResult(t, actual, expected) {
 		t.FailNow()

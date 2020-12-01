@@ -3,12 +3,21 @@ package repos
 import (
 	"testing"
 
+	vindex "github.com/sonirico/visigoth/internal/index"
+	"github.com/sonirico/visigoth/internal/tokenizer"
+
 	"github.com/sonirico/visigoth/internal/search"
 	"github.com/sonirico/visigoth/pkg/entities"
 )
 
+func newIndexRepo() IndexRepo {
+	return NewIndexRepo(func(name string) vindex.Index {
+		return vindex.NewMemoryIndex(name, tokenizer.NewSimpleTokenizer())
+	})
+}
+
 func Test_IndexRepo_Alias_Index_Exists(t *testing.T) {
-	repo := NewIndexRepo()
+	repo := newIndexRepo()
 
 	repo.Put("dedos", entities.NewDocRequest("pulgar", "este fue a por huevos"))
 	repo.Put("colores", entities.NewDocRequest("naranjito", "este es del 92"))
@@ -19,7 +28,7 @@ func Test_IndexRepo_Alias_Index_Exists(t *testing.T) {
 }
 
 func Test_IndexRepo_Alias_Index_DoesNotExist(t *testing.T) {
-	repo := NewIndexRepo()
+	repo := newIndexRepo()
 
 	repo.Put("dedos", entities.NewDocRequest("pulgar", "este fue a por huevos"))
 	repo.Put("colores", entities.NewDocRequest("naranjito", "este es del 92"))
@@ -30,7 +39,7 @@ func Test_IndexRepo_Alias_Index_DoesNotExist(t *testing.T) {
 }
 
 func Test_IndexRepo_UnAlias_All_Alias_Exists(t *testing.T) {
-	repo := NewIndexRepo()
+	repo := newIndexRepo()
 
 	repo.Put("dedos", entities.NewDocRequest("pulgar", "este fue a por huevos"))
 	repo.Alias("dedos:latest", "dedos")
@@ -41,7 +50,7 @@ func Test_IndexRepo_UnAlias_All_Alias_Exists(t *testing.T) {
 }
 
 func Test_IndexRepo_UnAlias_All_Alias_DoesNotExist(t *testing.T) {
-	repo := NewIndexRepo()
+	repo := newIndexRepo()
 
 	repo.Put("dedos", entities.NewDocRequest("pulgar", "este fue a por huevos"))
 
@@ -51,7 +60,7 @@ func Test_IndexRepo_UnAlias_All_Alias_DoesNotExist(t *testing.T) {
 }
 
 func Test_IndexRepo_Search_By_Alias(t *testing.T) {
-	repo := NewIndexRepo()
+	repo := newIndexRepo()
 
 	repo.Put("dedos", entities.NewDocRequest("pulgar", "este fue a por huevos"))
 	repo.Alias("dedos:latest", "dedos")
@@ -62,7 +71,7 @@ func Test_IndexRepo_Search_By_Alias(t *testing.T) {
 }
 
 func Test_IndexRepo_Search_By_AliasSeveralPointedIndices(t *testing.T) {
-	repo := NewIndexRepo()
+	repo := newIndexRepo()
 	repo.Put("dedos", entities.NewDocRequest("pulgar", "este fue a por huevos"))
 	repo.Put("comida", entities.NewDocRequest("huevos", "los huevos son cuerpos redondeados"))
 	repo.Alias("huevos:latest", "dedos")
@@ -91,7 +100,7 @@ func Test_IndexRepo_Search_By_AliasSeveralPointedIndices(t *testing.T) {
 }
 
 func Test_IndexRepo_Put_By_Alias(t *testing.T) {
-	repo := NewIndexRepo()
+	repo := newIndexRepo()
 	repo.Put("dedos", entities.NewDocRequest("pulgar", "este fue a por huevos"))
 	repo.Alias("dedos:latest", "dedos")
 	repo.Put("dedos:latest", entities.NewDocRequest("indice", "y este los casco"))
@@ -103,7 +112,7 @@ func Test_IndexRepo_Put_By_Alias(t *testing.T) {
 }
 
 func Test_IndexRepo_Rename_IndexExists(t *testing.T) {
-	repo := NewIndexRepo()
+	repo := newIndexRepo()
 	repo.Put("dedos", entities.NewDocRequest("pulgar", "este fue a por huevos"))
 	repo.Alias("dedos:latest", "dedos")
 	if ok := repo.Rename("dedos", "dedos_v2"); !ok {
@@ -118,7 +127,7 @@ func Test_IndexRepo_Rename_IndexExists(t *testing.T) {
 }
 
 func Test_IndexRepo_Rename_IndexDoesNotExist(t *testing.T) {
-	repo := NewIndexRepo()
+	repo := newIndexRepo()
 	repo.Put("dedos", entities.NewDocRequest("pulgar", "este fue a por huevos"))
 	repo.Alias("dedos:latest", "dedos")
 	if ok := repo.Rename("deditos", "dedos_v2"); ok {
@@ -128,7 +137,7 @@ func Test_IndexRepo_Rename_IndexDoesNotExist(t *testing.T) {
 }
 
 func Test_IndexRepo_HotSwap(t *testing.T) {
-	repo := NewIndexRepo()
+	repo := newIndexRepo()
 	repo.Put("dedos", entities.NewDocRequest("pulgar", "este fue a por huevos"))
 	repo.Alias("dedos:latest", "dedos")
 	repo.Put("dedos_v2", entities.NewDocRequest("menique", "este los zampo"))
@@ -141,7 +150,7 @@ func Test_IndexRepo_HotSwap(t *testing.T) {
 }
 
 func Test_IndexRepo_Drop_IndexExists(t *testing.T) {
-	repo := NewIndexRepo()
+	repo := newIndexRepo()
 	repo.Put("dedos", entities.NewDocRequest("pulgar", "este fue a por huevos"))
 	if ok := repo.Drop("dedos"); !ok {
 		t.Errorf("expected index 'dedos' to exist")
@@ -154,7 +163,7 @@ func Test_IndexRepo_Drop_IndexExists(t *testing.T) {
 }
 
 func Test_IndexRepo_Drop_IndexDoesNotExist(t *testing.T) {
-	repo := NewIndexRepo()
+	repo := newIndexRepo()
 	if ok := repo.Drop("dedos"); ok {
 		t.Errorf("expected index 'dedos' to have been erased")
 		return
@@ -162,7 +171,7 @@ func Test_IndexRepo_Drop_IndexDoesNotExist(t *testing.T) {
 }
 
 func Test_IndexRepo_Drop_IndexWithAliasExists_ShouldDropAlias(t *testing.T) {
-	repo := NewIndexRepo()
+	repo := newIndexRepo()
 	repo.Put("dedos", entities.NewDocRequest("pulgar", "este fue a por huevos"))
 	repo.Alias("dedos:latest", "dedos")
 	if ok := repo.Drop("dedos"); !ok {

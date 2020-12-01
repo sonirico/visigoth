@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	vindex "github.com/sonirico/visigoth/internal/index"
 	"github.com/sonirico/visigoth/internal/repos"
 	"github.com/sonirico/visigoth/internal/server"
+	"github.com/sonirico/visigoth/internal/tokenizer"
 	"github.com/sonirico/visigoth/pkg/entities"
 	"log"
 	"os"
@@ -40,7 +42,8 @@ func main() {
 	signals := make(chan os.Signal)
 	signal.Notify(signals, os.Kill, os.Interrupt)
 	ctx, cancel := context.WithCancel(context.Background())
-	repo := repos.NewIndexRepo()
+	tokenizr := tokenizer.NewStopWordsTokenizerFilter(tokenizer.SpanishStopWords, tokenizer.NewSimpleTokenizer())
+	repo := repos.NewIndexRepo(vindex.NewMemoryIndexBuilder(tokenizr))
 	node := server.NewNode(repo)
 	transporter := server.NewVTPTransport()
 	tcpServer := server.NewTcpServer(bindToTcp, node, transporter)

@@ -3,6 +3,7 @@ package tokenizer
 import (
 	"bytes"
 	"golang.org/x/text/runes"
+	"log"
 	"unicode"
 
 	"golang.org/x/text/transform"
@@ -10,8 +11,8 @@ import (
 )
 
 type Tokenizer interface {
-	Tokenize([]byte) [][]byte
-	TokenizeSingle([]byte) ([]byte, bool)
+	TokenizeText([]byte) [][]byte
+	TokenizeWord([]byte) ([]byte, bool)
 }
 
 type Transformer interface {
@@ -50,16 +51,16 @@ type SimpleTokenizer struct {
 	Tf Transformer
 }
 
-func NewSimpleTokenizer() *SimpleTokenizer {
-	st := &SimpleTokenizer{}
+func NewSimpleTokenizer() Tokenizer {
+	st := new(SimpleTokenizer)
 	st.Tf = newLowercaseTransformer()
 	return st
 }
 
-func (s *SimpleTokenizer) Tokenize(payload []byte) [][]byte {
+func (s *SimpleTokenizer) TokenizeText(payload []byte) [][]byte {
 	var res [][]byte
 	for _, bword := range bytes.Fields(payload) {
-		bword, ok := s.TokenizeSingle(bword)
+		bword, ok := s.TokenizeWord(bword)
 		if ok {
 			res = append(res, bword)
 		}
@@ -67,57 +68,15 @@ func (s *SimpleTokenizer) Tokenize(payload []byte) [][]byte {
 	return res
 }
 
-func (s *SimpleTokenizer) TokenizeSingle(payload []byte) ([]byte, bool) {
+func (s *SimpleTokenizer) TokenizeWord(payload []byte) ([]byte, bool) {
 	bword := bytes.Trim(payload, ".,-~?!\"'`;:()<>[]{}\\|/=_+*&^%$#@")
 	if len(bword) > 0 {
 		word, err := s.Tf.Transform(bword)
 		if err != nil {
-			panic(err)
+			log.Println("SimpleTokenizer, fatal error: ", err)
+			return nil, false
 		}
 		return word, true
 	}
 	return nil, false
 }
-
-type StopWordsTokenizer struct {
-	T         *SimpleTokenizer
-	stopWords map[string]bool
-}
-
-func NewStopWordsTokenizer(stopWords []string) *StopWordsTokenizer {
-	base := NewSimpleTokenizer()
-	t := &StopWordsTokenizer{
-		T:         base,
-		stopWords: make(map[string]bool, len(stopWords)),
-	}
-	for _, w := range stopWords {
-		stopWordToken, ok := base.TokenizeSingle([]byte(w))
-		if ok {
-			t.stopWords[string(stopWordToken)] = true
-		}
-	}
-	return t
-}
-
-func (st *StopWordsTokenizer) Tokenize(payload []byte) [][]byte {
-	var res [][]byte
-	for _, bword := range st.T.Tokenize(payload) {
-		bword, ok := st.TokenizeSingle(bword)
-		if ok {
-			res = append(res, bword)
-		}
-	}
-	return res
-}
-
-func (st *StopWordsTokenizer) TokenizeSingle(payload []byte) ([]byte, bool) {
-	sword := string(payload)
-	if ok := st.stopWords[sword]; ok {
-		return nil, false
-	}
-	return payload, true
-}
-
-var (
-	SpanishTokenizer = NewStopWordsTokenizer(SpanishStopWords)
-)

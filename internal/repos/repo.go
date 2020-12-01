@@ -8,8 +8,6 @@ import (
 	"github.com/sonirico/visigoth/pkg/entities"
 
 	vindex "github.com/sonirico/visigoth/internal/index"
-
-	vtoken "github.com/sonirico/visigoth/internal/tokenizer"
 )
 
 type IndexRepo interface {
@@ -41,16 +39,8 @@ type indexRepo struct {
 	aliases   map[string][]string
 	aliasesMu sync.RWMutex
 
-	writers chan struct{}
-}
-
-func NewIndexRepo() IndexRepo {
-	return &indexRepo{
-		indices:   make(map[string]vindex.Index),
-		indicesMu: sync.RWMutex{},
-		aliases:   make(map[string][]string),
-		aliasesMu: sync.RWMutex{},
-	}
+	writers      chan struct{}
+	indexBuilder vindex.IndexBuilder
 }
 
 func (h *indexRepo) List() []string {
@@ -209,7 +199,7 @@ func (h *indexRepo) Put(indexName string, doc entities.DocRequest) {
 	if !ok {
 		// TODO sanitize name
 		// TODO parametrize index engine
-		in := newMemoIndex(indexName)
+		in := h.indexBuilder(indexName)
 		h.indices[indexName] = in
 		in.Put(doc)
 		h.indicesMu.Unlock()
@@ -295,6 +285,12 @@ func (h *indexRepo) getIndices(name string) ([]vindex.Index, bool) {
 	return res, true
 }
 
-func newMemoIndex(indexName string) *vindex.MemoryIndex {
-	return vindex.NewMemoryIndex(indexName, vtoken.SpanishTokenizer) // TODO: engines and/or build args
+func NewIndexRepo(builder vindex.IndexBuilder) IndexRepo {
+	return &indexRepo{
+		indices:      make(map[string]vindex.Index),
+		indicesMu:    sync.RWMutex{},
+		aliases:      make(map[string][]string),
+		aliasesMu:    sync.RWMutex{},
+		indexBuilder: builder,
+	}
 }

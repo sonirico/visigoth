@@ -3,12 +3,15 @@ package server
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/sonirico/visigoth/internal/repos"
-	"github.com/sonirico/visigoth/pkg/entities"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	vindex "github.com/sonirico/visigoth/internal/index"
+	"github.com/sonirico/visigoth/internal/repos"
+	"github.com/sonirico/visigoth/internal/tokenizer"
+	"github.com/sonirico/visigoth/pkg/entities"
 )
 
 func encode(any interface{}) []byte {
@@ -16,8 +19,14 @@ func encode(any interface{}) []byte {
 	return b
 }
 
+func newIndexRepo() repos.IndexRepo {
+	return repos.NewIndexRepo(func(name string) vindex.Index {
+		return vindex.NewMemoryIndex(name, tokenizer.NewSimpleTokenizer())
+	})
+}
+
 func TestIndexHttpServer_ServeHTTP_Search(t *testing.T) {
-	repo := repos.NewIndexRepo()
+	repo := newIndexRepo()
 	server := NewApiController(repo).Handler()
 
 	// Set up server state
@@ -156,7 +165,7 @@ func TestIndexHttpServer_ServeHTTP_Index(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := httptest.NewRequest(test.method, test.uri, bytes.NewReader(test.data))
 			res := httptest.NewRecorder()
-			repo := repos.NewIndexRepo()
+			repo := newIndexRepo()
 			if test.init != nil {
 				test.init(repo)
 			}
@@ -177,7 +186,7 @@ func TestIndexHttpServer_ServeHTTP_Index(t *testing.T) {
 
 func TestIndexHttpServer_ServeHTTP_Alias(t *testing.T) {
 	// Set up server state
-	repo := repos.NewIndexRepo()
+	repo := newIndexRepo()
 	repo.Put("languages", entities.NewDocRequest("rust", "lenguaje con compilador grunon"))
 	repo.Alias("rustaceans", "languages")
 

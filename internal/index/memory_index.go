@@ -1,41 +1,19 @@
 package index
 
 import (
-	"github.com/sonirico/visigoth/pkg/entities"
 	"sync"
 
+	"github.com/sonirico/visigoth/pkg/entities"
+
 	"github.com/sonirico/visigoth/internal/search"
-
-	visigoth "github.com/sonirico/visigoth/internal/tokenizer"
 )
-
-type Indexable interface {
-	ID() string
-	Raw() string // The original content of the payload
-	Mime() entities.MimeType
-	Statement() string
-}
-
-type Index interface {
-	Put(Doc Indexable) Index
-	Search(terms string, engine search.Engine) entities.Iterator
-}
 
 type MemoryIndex struct {
 	L         sync.RWMutex
 	Name      string
-	Tokenizer visigoth.Tokenizer
+	Tokenizer Tokenizer
 	indexed   []entities.Doc
 	inverted  map[string][]int
-}
-
-func NewMemoryIndex(name string, tkr visigoth.Tokenizer) *MemoryIndex {
-	return &MemoryIndex{
-		Name:      name,
-		Tokenizer: tkr,
-		indexed:   []entities.Doc{},
-		inverted:  make(map[string][]int),
-	}
 }
 
 func (mi *MemoryIndex) Len() int {
@@ -59,7 +37,7 @@ func (mi *MemoryIndex) String() string {
 func (mi *MemoryIndex) Put(payload Indexable) Index {
 	mi.L.Lock()
 	defer mi.L.Unlock()
-	tokens := mi.Tokenizer.Tokenize([]byte(payload.Statement()))
+	tokens := mi.Tokenizer.TokenizeText([]byte(payload.Statement()))
 	next := len(mi.indexed)
 	newDoc := entities.NewDoc(payload.ID(), payload.Raw())
 	mi.indexed = append(mi.indexed, newDoc)
@@ -81,6 +59,21 @@ tokenLoop:
 func (mi *MemoryIndex) Search(payload string, engine search.Engine) entities.Iterator {
 	mi.L.RLock()
 	defer mi.L.RUnlock()
-	tokens := mi.Tokenizer.Tokenize([]byte(payload))
+	tokens := mi.Tokenizer.TokenizeText([]byte(payload))
 	return engine(tokens, mi)
+}
+
+func NewMemoryIndex(name string, tkr Tokenizer) *MemoryIndex {
+	return &MemoryIndex{
+		Name:      name,
+		Tokenizer: tkr,
+		indexed:   []entities.Doc{},
+		inverted:  make(map[string][]int),
+	}
+}
+
+func NewMemoryIndexBuilder(tokenizer Tokenizer) IndexBuilder {
+	return func(name string) Index {
+		return NewMemoryIndex(name, tokenizer)
+	}
 }
