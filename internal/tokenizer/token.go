@@ -47,6 +47,7 @@ func (t *lowercaseTransformer) Transform(payload []byte) ([]byte, error) {
 	return final, nil
 }
 
+// SimpleTokenizer removes accents, special characters and transforms to lowercase
 type SimpleTokenizer struct {
 	Tf Transformer
 }
