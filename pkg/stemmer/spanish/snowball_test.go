@@ -39,34 +39,32 @@ func TestRV(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		r1, r2, rv := R1R2RV([]byte(test.word))
+		r1, r2, rv := r1r2rv([]byte(test.word))
 
-		if r2 == nil && test.r2 == "" {
-
-		} else {
-			if bytes.Compare(r2, []byte(test.r2)) != 0 {
+		if r2 != nil && test.r2 != "" {
+			if bytes.Compare(r2.data, []byte(test.r2)) != 0 {
 				t.Fatalf("unexpected R2, want '%s', have '%s'",
-					test.r2, string(r2))
+					test.r2, string(r2.data))
 			}
 		}
 
 		if r1 == nil {
-			t.Fatalf("unexpected R1, want '%s', have '%s'",
-				test.r1, string(r1))
+			t.Fatalf("unexpected R1, want '%s', have nil",
+				test.r1)
 		}
 
-		if bytes.Compare(r1, []byte(test.r1)) != 0 {
+		if bytes.Compare(r1.data, []byte(test.r1)) != 0 {
 			t.Fatalf("unexpected R1, want '%s', have '%s'",
-				test.r1, string(r1))
+				test.r1, string(r1.data))
 		}
 		if rv == nil {
-			t.Fatalf("unexpected RV, want '%s', have '%s'",
-				test.rv, string(rv))
+			t.Fatalf("unexpected RV, want '%s', have nil",
+				test.rv)
 		}
 
-		if bytes.Compare(rv, []byte(test.rv)) != 0 {
+		if bytes.Compare(rv.data, []byte(test.rv)) != 0 {
 			t.Fatalf("unexpected RV, want '%s', have '%s'",
-				test.rv, string(rv))
+				test.rv, string(rv.data))
 		}
 	}
 }

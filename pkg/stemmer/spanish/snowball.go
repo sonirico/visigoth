@@ -19,24 +19,30 @@ func isVowel(r rune) (ok bool) {
 	return
 }
 
-func R1R2RV(w []byte) (r1 []byte, r2 []byte, rv []byte) {
+type runeSlot struct {
+	Index   int
+	Value   rune
+	IsVowel bool
+}
+
+type region struct {
+	data  []byte
+	runes []*runeSlot
+}
+
+func r1r2rv(w []byte) (r1, r2, rv *region) {
 	// UTF8 implicit!
 	foundVowel := false
 	foundNonVowel := false
-	type runeSlot struct {
-		Index   int
-		Value   rune
-		IsVowel bool
-	}
-	runes := make([]runeSlot, 0)
+	runes := make([]*runeSlot, 0)
 	for index, runeValue := range string(w) {
-		runes = append(runes, runeSlot{Index: index, Value: runeValue, IsVowel: isVowel(runeValue)})
+		runes = append(runes, &runeSlot{Index: index, Value: runeValue, IsVowel: isVowel(runeValue)})
 	}
 	runesLength := len(runes)
 	// R1
-	for _, slot := range runes {
+	for i, slot := range runes {
 		if foundNonVowel {
-			r1 = w[slot.Index:]
+			r1 = &region{data: w[slot.Index:], runes: runes[i:]}
 			break
 		}
 		if foundVowel {
@@ -54,17 +60,17 @@ func R1R2RV(w []byte) (r1 []byte, r2 []byte, rv []byte) {
 	// R2
 	foundVowel = false
 	foundNonVowel = false
-	for index, runeValue := range string(r1) {
+	for i, runeSlot := range r1.runes {
 		if foundNonVowel {
-			r2 = r1[index:]
+			r2 = &region{data: w[runeSlot.Index:], runes: runes[i:]}
 			break
 		}
 		if foundVowel {
-			if !isVowel(runeValue) {
+			if !runeSlot.IsVowel {
 				foundNonVowel = true
 			}
 		}
-		if isVowel(runeValue) {
+		if runeSlot.IsVowel {
 			foundVowel = true
 		}
 	}
@@ -79,7 +85,7 @@ func R1R2RV(w []byte) (r1 []byte, r2 []byte, rv []byte) {
 			for ; i < runesLength; i++ {
 				run := runes[i]
 				if foundNonVowel {
-					rv = w[run.Index:]
+					rv = &region{data: w[run.Index:], runes: runes[i:]}
 					return
 				}
 				if !run.IsVowel {
@@ -93,7 +99,7 @@ func R1R2RV(w []byte) (r1 []byte, r2 []byte, rv []byte) {
 			for ; i < runesLength; i++ {
 				run := runes[i]
 				if foundVowel {
-					rv = w[run.Index:]
+					rv = &region{data: w[run.Index:], runes: runes[i:]}
 					return
 				}
 				if run.IsVowel {
@@ -103,7 +109,7 @@ func R1R2RV(w []byte) (r1 []byte, r2 []byte, rv []byte) {
 		}
 
 		if runesLength > 3 && !runes[0].IsVowel && runes[1].IsVowel {
-			rv = w[runes[3].Index:]
+			rv = &region{data: w[runes[3].Index:], runes: runes[3:]}
 			return
 		}
 
