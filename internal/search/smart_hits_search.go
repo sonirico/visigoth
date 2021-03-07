@@ -39,7 +39,7 @@ func (d *docSet) store(key entities.HashKey, info *info) {
 
 // SmartHitsSearchEngine will either use concurrent search or sequential search based on
 // token amount
-func SmartHitsSearchEngine(tokens [][]byte, indexable Indexer) entities.Iterator {
+func SmartHitsSearchEngine(tokens []string, indexable Indexer) entities.Iterator {
 	// TODO: test benchmark
 	if len(tokens) < triggerSmartSearchThreshold {
 		return HitsSearchEngine(tokens, indexable)

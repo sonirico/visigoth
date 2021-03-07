@@ -19,4 +19,4 @@ type Indexer interface {
 	Document(index int) entities.Doc
 }
 
-type Engine func(tokens [][]byte, indexable Indexer) entities.Iterator
+type Engine func(tokens []string, indexable Indexer) entities.Iterator

@@ -15,11 +15,11 @@ func (n noopResult) Get(index int) entities.Row {
 	return nil
 }
 
-func NoopZeroSearchEngine(tokens [][]byte, indexable Indexer) entities.Iterator {
+func NoopZeroSearchEngine(tokens []string, indexable Indexer) entities.Iterator {
 	return container.NewResultIterator(&noopResult{size: 0})
 }
 
-func NoopAllSearchEngine(tokens [][]byte, indexable Indexer) entities.Iterator {
+func NoopAllSearchEngine(tokens []string, indexable Indexer) entities.Iterator {
 	result := &noopResult{size: indexable.Len()}
 	return container.NewResultIterator(result)
 }

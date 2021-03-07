@@ -11,7 +11,7 @@ import (
 type MemoryIndex struct {
 	L         sync.RWMutex
 	Name      string
-	Tokenizer Tokenizer
+	Tokenizer tokenizer
 	indexed   []entities.Doc
 	inverted  map[string][]int
 }
@@ -37,7 +37,7 @@ func (mi *MemoryIndex) String() string {
 func (mi *MemoryIndex) Put(payload Indexable) Index {
 	mi.L.Lock()
 	defer mi.L.Unlock()
-	tokens := mi.Tokenizer.TokenizeText([]byte(payload.Statement()))
+	tokens := mi.Tokenizer.Tokenize(payload.Statement())
 	next := len(mi.indexed)
 	newDoc := entities.NewDoc(payload.ID(), payload.Raw())
 	mi.indexed = append(mi.indexed, newDoc)
@@ -59,11 +59,11 @@ tokenLoop:
 func (mi *MemoryIndex) Search(payload string, engine search.Engine) entities.Iterator {
 	mi.L.RLock()
 	defer mi.L.RUnlock()
-	tokens := mi.Tokenizer.TokenizeText([]byte(payload))
+	tokens := mi.Tokenizer.Tokenize(payload)
 	return engine(tokens, mi)
 }
 
-func NewMemoryIndex(name string, tkr Tokenizer) *MemoryIndex {
+func NewMemoryIndex(name string, tkr tokenizer) *MemoryIndex {
 	return &MemoryIndex{
 		Name:      name,
 		Tokenizer: tkr,
@@ -72,7 +72,7 @@ func NewMemoryIndex(name string, tkr Tokenizer) *MemoryIndex {
 	}
 }
 
-func NewMemoryIndexBuilder(tokenizer Tokenizer) IndexBuilder {
+func NewMemoryIndexBuilder(tokenizer tokenizer) IndexBuilder {
 	return func(name string) Index {
 		return NewMemoryIndex(name, tokenizer)
 	}

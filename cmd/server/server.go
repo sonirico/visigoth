@@ -7,7 +7,7 @@ import (
 	vindex "github.com/sonirico/visigoth/internal/index"
 	"github.com/sonirico/visigoth/internal/repos"
 	"github.com/sonirico/visigoth/internal/server"
-	"github.com/sonirico/visigoth/internal/tokenizer"
+	"github.com/sonirico/visigoth/pkg/analyze"
 	"github.com/sonirico/visigoth/pkg/entities"
 	"log"
 	"os"
@@ -42,8 +42,12 @@ func main() {
 	signals := make(chan os.Signal)
 	signal.Notify(signals, os.Kill, os.Interrupt)
 	ctx, cancel := context.WithCancel(context.Background())
-	tokenizr := tokenizer.NewStopWordsTokenizerFilter(tokenizer.SpanishStopWords, tokenizer.NewSimpleTokenizer())
-	repo := repos.NewIndexRepo(vindex.NewMemoryIndexBuilder(tokenizr))
+	tokenizer := analyze.NewKeepAlphanumericTokenizer()
+	analyzer := analyze.NewTokenizationPipeline(&tokenizer,
+		analyze.NewLowerCaseTokenizer(),
+		analyze.NewStopWordsFilter(analyze.SpanishStopWords),
+		analyze.NewSpanishStemmer(true))
+	repo := repos.NewIndexRepo(vindex.NewMemoryIndexBuilder(&analyzer))
 	node := server.NewNode(repo)
 	transporter := server.NewVTPTransport()
 	tcpServer := server.NewTcpServer(bindToTcp, node, transporter)

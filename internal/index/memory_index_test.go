@@ -2,10 +2,9 @@ package index
 
 import (
 	"github.com/sonirico/visigoth/internal/search"
+	"github.com/sonirico/visigoth/pkg/analyze"
 	"github.com/sonirico/visigoth/pkg/entities"
 	"testing"
-
-	visigoth "github.com/sonirico/visigoth/internal/tokenizer"
 )
 
 type testResultRow struct {
@@ -91,7 +90,9 @@ func assertSearchReturns(t *testing.T, index Index, tests []testSearch) {
 }
 
 func Test_Index_Search_One(t *testing.T) {
-	in := NewMemoryIndex("testing", visigoth.NewSimpleTokenizer())
+	tokenizer := analyze.NewKeepAlphanumericTokenizer()
+	pipeline := analyze.NewTokenizationPipeline(&tokenizer, analyze.NewLowerCaseTokenizer())
+	in := NewMemoryIndex("testing", &pipeline)
 	in.Put(entities.NewDocRequest("/course/java", `Curso de programación en Java (León)`))
 	in.Put(entities.NewDocRequest("/course/php", `Curso de programación en PHP (León)`))
 	tests := []testSearch{
@@ -106,7 +107,9 @@ func Test_Index_Search_One(t *testing.T) {
 }
 
 func Test_Index_Search_Several(t *testing.T) {
-	in := NewMemoryIndex("testing", visigoth.NewSimpleTokenizer())
+	tokenizer := analyze.NewKeepAlphanumericTokenizer()
+	pipeline := analyze.NewTokenizationPipeline(&tokenizer, analyze.NewLowerCaseTokenizer())
+	in := NewMemoryIndex("testing", &pipeline)
 	in.Put(entities.NewDocRequest("/course/java", `Curso de programación en Java (León)`))
 	in.Put(entities.NewDocRequest("/course/php", `Curso de programación en PHP (León)`))
 	tests := []testSearch{

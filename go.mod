@@ -4,5 +4,6 @@ go 1.15
 
 require (
 	github.com/cespare/xxhash/v2 v2.1.1
-	golang.org/x/text v0.3.3
+	github.com/kljensen/snowball v0.6.0
+	golang.org/x/text v0.3.3 // indirect
 )

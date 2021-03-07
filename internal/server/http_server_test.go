@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/sonirico/visigoth/pkg/analyze"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -10,7 +11,6 @@ import (
 
 	vindex "github.com/sonirico/visigoth/internal/index"
 	"github.com/sonirico/visigoth/internal/repos"
-	"github.com/sonirico/visigoth/internal/tokenizer"
 	"github.com/sonirico/visigoth/pkg/entities"
 )
 
@@ -20,8 +20,10 @@ func encode(any interface{}) []byte {
 }
 
 func newIndexRepo() repos.IndexRepo {
+	tokenizer := analyze.NewKeepAlphanumericTokenizer()
+	pipeline := analyze.NewTokenizationPipeline(&tokenizer, analyze.NewLowerCaseTokenizer())
 	return repos.NewIndexRepo(func(name string) vindex.Index {
-		return vindex.NewMemoryIndex(name, tokenizer.NewSimpleTokenizer())
+		return vindex.NewMemoryIndex(name, &pipeline)
 	})
 }
 

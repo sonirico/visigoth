@@ -5,8 +5,8 @@ import (
 	"github.com/sonirico/visigoth/pkg/entities"
 )
 
-type Tokenizer interface {
-	TokenizeText([]byte) [][]byte
+type tokenizer interface {
+	Tokenize(text string) []string
 }
 
 type Indexable interface {

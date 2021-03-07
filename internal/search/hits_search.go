@@ -74,12 +74,12 @@ func (s *hitsSearchResult) Docs() []entities.Doc {
 	return docs
 }
 
-func HitsSearchEngine(tokens [][]byte, indexable Indexer) entities.Iterator {
+func HitsSearchEngine(tokens []string, indexable Indexer) entities.Iterator {
 	threshold := len(tokens)
 	docSet := make(map[entities.HashKey]*info)
 	result := newHitsSearchResult()
 	for _, token := range tokens {
-		indexed := indexable.Indexed(string(token))
+		indexed := indexable.Indexed(token)
 		if indexed == nil {
 			continue
 		}
