@@ -68,3 +68,48 @@ func TestRV(t *testing.T) {
 		}
 	}
 }
+
+func TestRegion_RemoveSuffix(t *testing.T) {
+	tests := []struct {
+		reg      *region
+		suf      suffix
+		removed  bool
+		expected string
+	}{
+		{
+			reg:      newRegion("macho"),
+			suf:      newSuffix("cho"),
+			removed:  true,
+			expected: "ma",
+		},
+		{
+			reg:      newRegion("machoáureo"),
+			suf:      newSuffix("áureo"),
+			removed:  true,
+			expected: "macho",
+		},
+		{
+			reg:      newRegion("macho"),
+			suf:      newSuffix("casa"),
+			removed:  false,
+			expected: "macho",
+		},
+	}
+
+	for _, test := range tests {
+		removed := test.reg.RemoveSuffix(test.suf)
+		if removed != test.removed {
+			t.Errorf("unexpected 'removed' value, want %t have %t",
+				test.removed, removed)
+		}
+		if test.reg.RawString() != test.expected {
+			t.Errorf("unexpected result, want '%s' have '%s'",
+				test.expected, test.reg.RawString())
+		}
+
+		if test.reg.RuneString() != test.expected {
+			t.Errorf("unexpected result, want '%s' have '%s'",
+				test.expected, test.reg.RuneString())
+		}
+	}
+}
