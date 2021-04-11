@@ -142,6 +142,8 @@ func (n *node) handleSearchRequest(msg vtp.Message) vtp.Message {
 	switch search.EngineType(req.EngineType.Value) {
 	case search.Hits:
 		engine = search.HitsSearchEngine
+	case search.Linear:
+		engine = search.LinearSearchEngine
 	default:
 		return vtp.NewStatusResponse(req.Id(), req.Version(), false)
 	}
@@ -172,6 +174,15 @@ func (n *node) handleSearchRequest(msg vtp.Message) vtp.Message {
 						Content: &vtp.StringType{Value: mrow.Doc().Raw()},
 					},
 					Hits: &vtp.UInt32Type{Value: uint32(mrow.Hits())},
+				}
+				res.Documents = append(res.Documents, doc)
+			default:
+				doc := &vtp.HitsResponseRow{
+					Document: &vtp.DocumentView{
+						Name:    &vtp.StringType{Value: mrow.Doc().Id()},
+						Content: &vtp.StringType{Value: mrow.Doc().Raw()},
+					},
+					Hits: &vtp.UInt32Type{Value: 1},
 				}
 				res.Documents = append(res.Documents, doc)
 			}

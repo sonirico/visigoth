@@ -185,7 +185,7 @@ func ParseSearchResponse(head *Head, src io.Reader, parser Parser) (*HitsSearchR
 	switch search.EngineType(engine.Value) {
 	case search.SmartsHits:
 		fallthrough
-	case search.Hits:
+	case search.Hits, search.Linear:
 		return ParseHitsSearchResponse(head, src, parser)
 	default:
 		return nil, fmt.Errorf("unknown engine type %d", engine.Value)

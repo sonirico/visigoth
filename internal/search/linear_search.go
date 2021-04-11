@@ -56,7 +56,7 @@ func (r linearSearchResult) Get(i int) entities.Row {
 	if r.indexes == nil || i >= len(r.indexes) {
 		return nil
 	}
-	doc := r.indexer.Document(i)
+	doc := r.indexer.Document(r.indexes[i])
 	return linearSearchResultRow{doc: doc}
 }
 

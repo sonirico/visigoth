@@ -143,6 +143,10 @@ func (c *commandEvaluator) evalSearchStatement(node *vql.SearchStatement) vtp.Me
 			engine = search.NoopZero
 		case "noop_all":
 			engine = search.NoopAll
+		case "linear":
+			engine = search.Linear
+		default:
+			engine = search.Hits
 		}
 	}
 	return vtp.NewSearchRequest(

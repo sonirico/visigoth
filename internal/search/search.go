@@ -11,6 +11,7 @@ const (
 	NoopAll
 	Hits
 	SmartsHits
+	Linear
 )
 
 type Indexer interface {
