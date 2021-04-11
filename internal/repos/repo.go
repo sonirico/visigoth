@@ -286,6 +286,7 @@ func (h *indexRepo) getIndices(name string) ([]vindex.Index, bool) {
 		res[i], _ = h.indices[index]
 	}
 	h.indicesMu.RUnlock()
+	h.aliasesMu.RUnlock()
 	return res, true
 }
 
