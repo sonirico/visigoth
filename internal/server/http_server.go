@@ -42,7 +42,7 @@ var (
 	indexDoesNotExistResponse, _ = json.Marshal(ErrorResponse{
 		Message: "Index not found",
 	})
-	defaultEngine     = search.HitsSearchEngine
+	defaultEngine     = search.LinearSearchEngine
 	defaultSerializer = search.JsonHitsSearchResultSerializer
 )
 
@@ -138,7 +138,7 @@ func (s *apiController) handleSearch(w http.ResponseWriter, r *http.Request) {
 				_, _ = w.Write(pending)
 				_, _ = w.Write(commaSer)
 			}
-			pending = row.Ser(defaultSerializer)
+			pending = row.Ser(&defaultSerializer)
 		}
 		if done {
 			break
@@ -209,12 +209,11 @@ type httpServer struct {
 
 func (s *httpServer) Serve(ctx context.Context) {
 	handler := s.ctrl.Handler()
-	server := &http.Server{Addr: s.addr, Handler: handler}
+	server := http.Server{Addr: s.addr, Handler: handler}
 	go func() {
 		if err := server.ListenAndServe(); err != nil {
 			log.Println("apiController, listenAndServeError", err)
 		}
-
 	}()
 	select {
 	case <-ctx.Done():

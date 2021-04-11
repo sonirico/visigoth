@@ -2,35 +2,53 @@ package search
 
 import (
 	"encoding/json"
-	"github.com/sonirico/visigoth/pkg/entities"
 	"log"
+
+	"github.com/sonirico/visigoth/pkg/entities"
 )
 
-type hitsSearchRowSchema struct {
-	DocId string                 `json:"_id"`
-	Doc   map[string]interface{} `json:"_doc"`
-	Hits  int                    `json:"hits"`
-}
-
-type jsonHitsSearchResultSerializer struct{}
-
-func (j *jsonHitsSearchResultSerializer) Serialize(item entities.Row) []byte {
-	row, ok := item.(HitsSearchRow)
-	if !ok {
-		log.Fatal("unexpected type cannot be serialized. want 'hitsSearchRow', have %V", row)
+type (
+	defaultSearchSchema struct {
+		DocId string      `json:"_id"`
+		Doc   interface{} `json:"_doc"`
 	}
-	doc := make(map[string]interface{})
-	_ = json.Unmarshal([]byte(row.Doc().Raw()), &doc)
-	data := &hitsSearchRowSchema{
-		DocId: row.Doc().Id(),
-		Doc:   doc,
-		Hits:  row.Hits(),
+
+	hitsSearchRowSchema struct {
+		DocId string                 `json:"_id"`
+		Doc   map[string]interface{} `json:"_doc"`
+		Hits  int                    `json:"hits"`
 	}
-	raw, err := json.Marshal(data)
+)
+
+type jsonSearchResultSerializer struct{}
+
+func (j *jsonSearchResultSerializer) Serialize(item entities.Row) []byte {
+	var res interface{}
+
+	switch row := item.(type) {
+	case hitsSearchResultRow:
+		doc := make(map[string]interface{})
+		_ = json.Unmarshal([]byte(row.Doc().Raw()), &doc)
+		res = hitsSearchRowSchema{
+			DocId: row.Doc().Id(),
+			Doc:   doc,
+			Hits:  row.Hits(),
+		}
+	default:
+		doc := make(map[string]interface{})
+		_ = json.Unmarshal([]byte(row.Doc().Raw()), &doc)
+		res = defaultSearchSchema{
+			DocId: item.Doc().Id(),
+			Doc:   doc,
+		}
+	}
+
+	raw, err := json.Marshal(res)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("error:", err)
+		return nil
 	}
 	return raw
 }
 
-var JsonHitsSearchResultSerializer = &jsonHitsSearchResultSerializer{}
+var JsonHitsSearchResultSerializer = jsonSearchResultSerializer{}

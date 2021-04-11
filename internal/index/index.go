@@ -9,7 +9,7 @@ type tokenizer interface {
 	Tokenize(text string) []string
 }
 
-type Indexable interface {
+type indexable interface {
 	ID() string
 	Raw() string // The original content of the payload
 	Mime() entities.MimeType
@@ -17,7 +17,7 @@ type Indexable interface {
 }
 
 type Index interface {
-	Put(Doc Indexable) Index
+	Put(Doc indexable) Index
 	Search(terms string, engine search.Engine) entities.Iterator
 }
 

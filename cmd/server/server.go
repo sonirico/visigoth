@@ -56,7 +56,7 @@ func main() {
 
 	go func() {
 		log.Println("indexing debug documents...")
-		data, _ := json.Marshal(&healthIndex{Ok: true})
+		data, _ := json.Marshal(healthIndex{Ok: true})
 		repo.Put("__health__", entities.NewDocRequest("health", string(data)))
 	}()
 

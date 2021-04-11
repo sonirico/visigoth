@@ -1,8 +1,9 @@
 package repos
 
 import (
-	"github.com/sonirico/visigoth/pkg/analyze"
 	"testing"
+
+	"github.com/sonirico/visigoth/pkg/analyze"
 
 	vindex "github.com/sonirico/visigoth/internal/index"
 
@@ -14,7 +15,7 @@ func newIndexRepo() IndexRepo {
 	tokenizer := analyze.NewKeepAlphanumericTokenizer()
 	pipeline := analyze.NewTokenizationPipeline(&tokenizer, analyze.NewLowerCaseTokenizer())
 	return NewIndexRepo(func(name string) vindex.Index {
-		return vindex.NewMemoryIndex(name,&pipeline)
+		return vindex.NewMemoryIndex(name, &pipeline)
 	})
 }
 

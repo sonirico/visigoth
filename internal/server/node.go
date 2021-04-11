@@ -140,8 +140,6 @@ func (n *node) handleSearchRequest(msg vtp.Message) vtp.Message {
 	terms := strings.TrimSpace(req.Terms.Value)
 
 	switch search.EngineType(req.EngineType.Value) {
-	case search.SmartsHits:
-		engine = search.SmartHitsSearchEngine
 	case search.Hits:
 		engine = search.HitsSearchEngine
 	default:
@@ -166,15 +164,17 @@ func (n *node) handleSearchRequest(msg vtp.Message) vtp.Message {
 		row, done := results.Next()
 
 		if row != nil {
-			mrow, _ := row.(search.HitsSearchRow)
-			doc := &vtp.HitsResponseRow{
-				Document: &vtp.DocumentView{
-					Name:    &vtp.StringType{Value: mrow.Doc().Id()},
-					Content: &vtp.StringType{Value: mrow.Doc().Raw()},
-				},
-				Hits: &vtp.UInt32Type{Value: uint32(mrow.Hits())},
+			switch mrow := row.(type) {
+			case search.HitsSearchRow:
+				doc := &vtp.HitsResponseRow{
+					Document: &vtp.DocumentView{
+						Name:    &vtp.StringType{Value: mrow.Doc().Id()},
+						Content: &vtp.StringType{Value: mrow.Doc().Raw()},
+					},
+					Hits: &vtp.UInt32Type{Value: uint32(mrow.Hits())},
+				}
+				res.Documents = append(res.Documents, doc)
 			}
-			res.Documents = append(res.Documents, doc)
 		}
 
 		if done {

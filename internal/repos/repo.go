@@ -1,6 +1,7 @@
 package repos
 
 import (
+	"bytes"
 	"fmt"
 	"sync"
 
@@ -283,6 +284,16 @@ func (h *indexRepo) getIndices(name string) ([]vindex.Index, bool) {
 	}
 	h.indicesMu.RUnlock()
 	return res, true
+}
+
+func (h *indexRepo) String() string {
+	h.indicesMu.RLock()
+	var buf bytes.Buffer
+	for _, index := range h.indices {
+		buf.WriteString(fmt.Sprintln(index))
+	}
+	h.indicesMu.RUnlock()
+	return buf.String()
 }
 
 func NewIndexRepo(builder vindex.IndexBuilder) IndexRepo {

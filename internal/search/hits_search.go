@@ -1,7 +1,6 @@
 package search
 
 import (
-	"fmt"
 	"github.com/sonirico/visigoth/internal/container"
 	"github.com/sonirico/visigoth/pkg/entities"
 	"sort"
@@ -12,49 +11,49 @@ type HitsSearchRow interface {
 	Hits() int
 }
 
-type info struct {
+type hitsSearchResultRow struct {
 	annotated bool
 	doc       entities.Doc
 	hits      int
 }
 
-func (i info) Hits() int {
+func (i hitsSearchResultRow) Hits() int {
 	return i.hits
 }
 
-func (i info) Doc() entities.Doc {
+func (i hitsSearchResultRow) Doc() entities.Doc {
 	return i.doc
 }
 
-func (i *info) Ser(serializer entities.Serializer) []byte {
+func (i hitsSearchResultRow) Ser(serializer entities.Serializer) []byte {
 	return serializer.Serialize(i)
 }
 
 type hitsSearchResult struct {
-	items []HitsSearchRow
+	items []hitsSearchResultRow
 }
 
-func newHitsSearchResult() *hitsSearchResult {
-	return &hitsSearchResult{items: []HitsSearchRow{}}
+func newHitsSearchResult() hitsSearchResult {
+	return hitsSearchResult{items: []hitsSearchResultRow{}}
 }
 
-func (s *hitsSearchResult) Add(row HitsSearchRow) {
+func (s *hitsSearchResult) Add(row hitsSearchResultRow) {
 	s.items = append(s.items, row)
 }
 
-func (s *hitsSearchResult) Get(index int) entities.Row {
+func (s hitsSearchResult) Get(index int) entities.Row {
 	if len(s.items) <= index {
 		return nil
 	}
 	return s.items[index]
 }
 
-func (s *hitsSearchResult) Len() int {
+func (s hitsSearchResult) Len() int {
 	return len(s.items)
 }
 
-func (s *hitsSearchResult) Less(i, j int) bool {
-	return s.items[i].Hits() > s.items[j].Hits()
+func (s hitsSearchResult) Less(i, j int) bool {
+	return s.items[i].hits > s.items[j].hits
 }
 
 func (s *hitsSearchResult) Swap(i, j int) {
@@ -63,20 +62,9 @@ func (s *hitsSearchResult) Swap(i, j int) {
 	s.items[i] = tmp
 }
 
-func (s *hitsSearchResult) Docs() []entities.Doc {
-	docs := make([]entities.Doc, len(s.items))
-	i := 0
-	for _, info := range s.items {
-		docs[i] = info.Doc()
-		fmt.Println(fmt.Sprintf("%d hits ->>> %s", info.Hits(), info.Doc().Id()))
-		i++
-	}
-	return docs
-}
-
 func HitsSearchEngine(tokens []string, indexable Indexer) entities.Iterator {
 	threshold := len(tokens)
-	docSet := make(map[entities.HashKey]*info)
+	docSet := make(map[entities.HashKey]hitsSearchResultRow)
 	result := newHitsSearchResult()
 	for _, token := range tokens {
 		indexed := indexable.Indexed(token)
@@ -85,12 +73,12 @@ func HitsSearchEngine(tokens []string, indexable Indexer) entities.Iterator {
 		}
 		for _, index := range indexed {
 			doc := indexable.Document(index)
-			var searchInfo *info
+			var searchInfo hitsSearchResultRow
 			if inf, ok := docSet[doc.Hash()]; ok {
 				inf.hits++
 				searchInfo = inf
 			} else {
-				searchInfo = &info{
+				searchInfo = hitsSearchResultRow{
 					hits: 1,
 					doc:  doc,
 				}
@@ -102,6 +90,6 @@ func HitsSearchEngine(tokens []string, indexable Indexer) entities.Iterator {
 			}
 		}
 	}
-	sort.Sort(result)
+	sort.Sort(&result)
 	return container.NewResultIterator(result)
 }

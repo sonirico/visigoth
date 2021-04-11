@@ -1,74 +1,76 @@
 package index
 
 import (
-	"sync"
-
+	"bytes"
+	"fmt"
 	"github.com/sonirico/visigoth/pkg/entities"
 
 	"github.com/sonirico/visigoth/internal/search"
 )
 
+//easyjson:json
 type MemoryIndex struct {
-	L         sync.RWMutex
-	Name      string
-	Tokenizer tokenizer
-	indexed   []entities.Doc
-	inverted  map[string][]int
+	name string
+
+	tokenizer tokenizer
+
+	Docs          []entities.Doc   `json:"indexed"`
+	InvertedIndex map[string][]int `json:"inverted"`
 }
 
 func (mi *MemoryIndex) Len() int {
-	return len(mi.indexed)
+	return len(mi.Docs)
 }
 
 func (mi *MemoryIndex) Indexed(key string) (data []int) {
-	data, _ = mi.inverted[key]
-	return
+	data, _ = mi.InvertedIndex[key]
+	r := append(make([]int, 0, len(data)), data...)
+	return r
 }
 
 func (mi *MemoryIndex) Document(index int) entities.Doc {
-	Doc := mi.indexed[index]
-	return Doc
+	return mi.Docs[index]
 }
 
 func (mi *MemoryIndex) String() string {
-	return mi.Name
+	var buf bytes.Buffer
+	buf.WriteString("{\n")
+	buf.WriteString("\tname=" + mi.name)
+	for token, indexed := range mi.InvertedIndex {
+		buf.WriteString(fmt.Sprintf("\n\t[token=%s,length=(%d)]=%v", token, len(indexed), indexed))
+	}
+	buf.WriteString("\n}")
+	return buf.String()
 }
 
-func (mi *MemoryIndex) Put(payload Indexable) Index {
-	mi.L.Lock()
-	defer mi.L.Unlock()
-	tokens := mi.Tokenizer.Tokenize(payload.Statement())
-	next := len(mi.indexed)
+func (mi *MemoryIndex) Put(payload indexable) Index {
+	tokens := mi.tokenizer.Tokenize(payload.Statement())
+	next := len(mi.Docs)
 	newDoc := entities.NewDoc(payload.ID(), payload.Raw())
-	mi.indexed = append(mi.indexed, newDoc)
+	mi.Docs = append(mi.Docs, newDoc)
 tokenLoop:
 	for _, tok := range tokens {
-		tokStr := string(tok)
-		indexedDocs := mi.inverted[tokStr]
+		indexedDocs := mi.InvertedIndex[tok]
 		for _, docIndex := range indexedDocs {
 			if docIndex == next {
 				continue tokenLoop
 			}
 		}
-		mi.inverted[tokStr] = append(indexedDocs, next)
+		mi.InvertedIndex[tok] = append(indexedDocs, next)
 	}
-
 	return mi
 }
 
 func (mi *MemoryIndex) Search(payload string, engine search.Engine) entities.Iterator {
-	mi.L.RLock()
-	defer mi.L.RUnlock()
-	tokens := mi.Tokenizer.Tokenize(payload)
-	return engine(tokens, mi)
+	return engine(mi.tokenizer.Tokenize(payload), mi)
 }
 
 func NewMemoryIndex(name string, tkr tokenizer) *MemoryIndex {
 	return &MemoryIndex{
-		Name:      name,
-		Tokenizer: tkr,
-		indexed:   []entities.Doc{},
-		inverted:  make(map[string][]int),
+		name:          name,
+		tokenizer:     tkr,
+		Docs:          []entities.Doc{},
+		InvertedIndex: make(map[string][]int),
 	}
 }
 

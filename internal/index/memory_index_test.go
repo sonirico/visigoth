@@ -69,8 +69,8 @@ func assertSearchReturns(t *testing.T, index Index, tests []testSearch) {
 		}
 
 		if counter != test.result.Len() {
-			t.Fatalf("unexpected search result size. want %d, have %d results",
-				test.result.Len(), counter)
+			t.Fatalf("unexpected search result size for term '%s'. want %d, have %d results",
+				test.term, test.result.Len(), counter)
 		}
 
 		for i := 0; i < counter; i++ {
@@ -90,9 +90,12 @@ func assertSearchReturns(t *testing.T, index Index, tests []testSearch) {
 }
 
 func Test_Index_Search_One(t *testing.T) {
-	tokenizer := analyze.NewKeepAlphanumericTokenizer()
-	pipeline := analyze.NewTokenizationPipeline(&tokenizer, analyze.NewLowerCaseTokenizer())
-	in := NewMemoryIndex("testing", &pipeline)
+	tokenizr := analyze.NewKeepAlphanumericTokenizer()
+	analyzer := analyze.NewTokenizationPipeline(&tokenizr,
+		analyze.NewLowerCaseTokenizer(),
+		analyze.NewStopWordsFilter(analyze.SpanishStopWords),
+		analyze.NewSpanishStemmer(true))
+	in := NewMemoryIndex("testing", &analyzer)
 	in.Put(entities.NewDocRequest("/course/java", `Curso de programación en Java (León)`))
 	in.Put(entities.NewDocRequest("/course/php", `Curso de programación en PHP (León)`))
 	tests := []testSearch{
@@ -107,11 +110,14 @@ func Test_Index_Search_One(t *testing.T) {
 }
 
 func Test_Index_Search_Several(t *testing.T) {
-	tokenizer := analyze.NewKeepAlphanumericTokenizer()
-	pipeline := analyze.NewTokenizationPipeline(&tokenizer, analyze.NewLowerCaseTokenizer())
-	in := NewMemoryIndex("testing", &pipeline)
-	in.Put(entities.NewDocRequest("/course/java", `Curso de programación en Java (León)`))
-	in.Put(entities.NewDocRequest("/course/php", `Curso de programación en PHP (León)`))
+	tokenizr := analyze.NewKeepAlphanumericTokenizer()
+	analyzer := analyze.NewTokenizationPipeline(&tokenizr,
+		analyze.NewLowerCaseTokenizer(),
+		analyze.NewStopWordsFilter(analyze.SpanishStopWords),
+		analyze.NewSpanishStemmer(true))
+	in := NewMemoryIndex("testing", &analyzer)
+	in.Put(entities.NewDocRequest("/course/java", `Curso de programacion en Java (León)`))
+	in.Put(entities.NewDocRequest("/course/php", `Curso de programacion en PHP (León)`))
 	tests := []testSearch{
 		{
 			term:   "java",
@@ -123,7 +129,7 @@ func Test_Index_Search_Several(t *testing.T) {
 			result: newTestResult().Add(
 				newTestResultRow("/course/java"),
 				newTestResultRow("/course/php")),
-			engine: search.HitsSearchEngine,
+			engine: search.LinearSearchEngine,
 		},
 	}
 
