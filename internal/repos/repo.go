@@ -118,6 +118,7 @@ func (h *indexRepo) UnAlias(alias, index string) bool {
 			return false
 		}
 		// alias already exists, check if already has the index
+		// TODO: improve
 		var newIndices []string
 		for _, aliasedIndexName := range indices {
 			if aliasedIndexName != index {
@@ -129,9 +130,11 @@ func (h *indexRepo) UnAlias(alias, index string) bool {
 		}
 		h.aliasesMu.Unlock()
 	} else {
-		// remove the entire alias if no index if specified
+		// remove the entire alias if no index is specified
+		h.aliasesMu.Lock()
 		_, ok := h.aliases[alias]
 		delete(h.aliases, alias)
+		h.aliasesMu.Unlock()
 		return ok
 	}
 	return true

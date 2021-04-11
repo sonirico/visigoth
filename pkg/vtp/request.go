@@ -25,8 +25,6 @@ const (
 	ListAliasesRes
 )
 
-var HeadLength = 8 + 1 + 1
-
 type Message interface {
 	String() string
 	Id() uint64

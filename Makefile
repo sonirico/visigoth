@@ -2,6 +2,8 @@ PROJECT := visigoth
 VERSION := $(shell cat VERSION)
 XC_OS 	:= linux darwin
 XC_ARCH := 386 amd64 arm
+XC_OS 	:= linux
+XC_ARCH := amd64
 LD_FLAGS := -X main.version=$(VERSION) -s -w
 SOURCE_FILES ?=./internal/... ./pkg/...
 TEST_PATTERN ?=.
