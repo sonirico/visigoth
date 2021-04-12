@@ -3,17 +3,20 @@ package client
 import (
 	"bytes"
 	"context"
-	"github.com/sonirico/visigoth/internal/server"
 	"io"
 	"log"
 	"net"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/sonirico/visigoth/internal/search"
+	"github.com/sonirico/visigoth/internal/server"
 	"github.com/sonirico/visigoth/pkg/entities"
 	"github.com/sonirico/visigoth/pkg/vtp"
 )
+
+var defaultAttempts = int(5)
 
 type callback func(result vtp.Message)
 
@@ -115,17 +118,22 @@ func (c *TCPClient) registerCallback(id uint64, cb callback) {
 	c.callbacks[id] = cb
 }
 
-func (c *TCPClient) connect() io.ReadWriteCloser {
+func (c *TCPClient) connect(maxAttempts int) (io.ReadWriteCloser, error) {
+	attempts := 0
+
 	for {
 		con, err := net.Dial("tcp", c.bindTo)
 		if err != nil {
-			// TODO: reconnect on error
-			c.onErrorCallback(err)
-			time.Sleep(time.Second)
+			if attempts >= maxAttempts {
+				os.Exit(3)
+			}
+			attempts++
+			log.Printf("client error, trying to reconnect attempt %v\n", attempts)
+			time.Sleep(time.Second * time.Duration(attempts))
 			continue
 		}
 		if con != nil {
-			return con
+			return con, nil
 		}
 	}
 }
@@ -133,7 +141,7 @@ func (c *TCPClient) connect() io.ReadWriteCloser {
 func (c *TCPClient) Start(ctx context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	c.conn = c.connect()
+	c.conn, _ = c.connect(defaultAttempts)
 	if c.conn == nil {
 		return
 	}
