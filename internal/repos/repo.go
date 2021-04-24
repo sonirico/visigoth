@@ -41,7 +41,7 @@ type indexRepo struct {
 	aliasesMu sync.RWMutex
 
 	writers      chan struct{}
-	indexBuilder vindex.IndexBuilder
+	indexBuilder vindex.Builder
 }
 
 func (h *indexRepo) List() []string {
@@ -300,7 +300,7 @@ func (h *indexRepo) String() string {
 	return buf.String()
 }
 
-func NewIndexRepo(builder vindex.IndexBuilder) IndexRepo {
+func NewIndexRepo(builder vindex.Builder) IndexRepo {
 	return &indexRepo{
 		indices:      make(map[string]vindex.Index),
 		indicesMu:    sync.RWMutex{},
