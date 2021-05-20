@@ -122,9 +122,13 @@ func (c *commandEvaluator) evalShowStatement(q *vql.ShowStatement) vtp.Message {
 func (c *commandEvaluator) evalSearchStatement(node *vql.SearchStatement) vtp.Message {
 	var index string
 	var engine search.EngineType
+	if node.Payload == nil {
+		log.Println("SEARCH command requires a payload")
+		return nil
+	}
 	if node.Index == nil {
 		if c.env.Index == nil {
-			log.Println("SEARCH command requires a payload")
+			log.Println("Index not given, USE it first or provide it")
 			return nil
 		}
 		index = *c.env.Index
