@@ -21,11 +21,6 @@ if ! [ -z "$files" ]; then
     git add $files
 fi
 
-if [ $? -ne 0 ]; then
-    echo "$ERROR_PREFIX formatting failed."
-    ERROR=true
-fi
-
 #### LINT ####
 echo "running linter..."
 make lint > /dev/null 2>&1
