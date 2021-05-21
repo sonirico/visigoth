@@ -1,8 +1,9 @@
 package container
 
 import (
-	"github.com/cespare/xxhash/v2"
 	"sync"
+
+	"github.com/cespare/xxhash/v2"
 )
 
 type hasher interface {
@@ -85,7 +86,7 @@ func NewShardedMap(shards uint64) Map {
 		shards:     make([]*shard, shards, shards),
 		shardCount: shards,
 	}
-	for i, _ := range m.shards {
+	for i := range m.shards {
 		m.shards[i] = newShard()
 	}
 	return m
@@ -98,7 +99,7 @@ func NewDefaultShardedMap() Map {
 		shards:     make([]*shard, shards, shards),
 		shardCount: shards,
 	}
-	for i, _ := range m.shards {
+	for i := range m.shards {
 		m.shards[i] = newShard()
 	}
 	return m

@@ -9,12 +9,12 @@ import (
 
 type (
 	defaultSearchSchema struct {
-		DocId string      `json:"_id"`
+		DocID string      `json:"_id"`
 		Doc   interface{} `json:"_doc"`
 	}
 
 	hitsSearchRowSchema struct {
-		DocId string                 `json:"_id"`
+		DocID string                 `json:"_id"`
 		Doc   map[string]interface{} `json:"_doc"`
 		Hits  int                    `json:"hits"`
 	}
@@ -30,7 +30,7 @@ func (j *jsonSearchResultSerializer) Serialize(item entities.Row) []byte {
 		doc := make(map[string]interface{})
 		_ = json.Unmarshal([]byte(row.Doc().Raw()), &doc)
 		res = hitsSearchRowSchema{
-			DocId: row.Doc().Id(),
+			DocID: row.Doc().ID(),
 			Doc:   doc,
 			Hits:  row.Hits(),
 		}
@@ -38,7 +38,7 @@ func (j *jsonSearchResultSerializer) Serialize(item entities.Row) []byte {
 		doc := make(map[string]interface{})
 		_ = json.Unmarshal([]byte(row.Doc().Raw()), &doc)
 		res = defaultSearchSchema{
-			DocId: item.Doc().Id(),
+			DocID: item.Doc().ID(),
 			Doc:   doc,
 		}
 	}
@@ -51,4 +51,4 @@ func (j *jsonSearchResultSerializer) Serialize(item entities.Row) []byte {
 	return raw
 }
 
-var JsonHitsSearchResultSerializer = jsonSearchResultSerializer{}
+var JSONHitsSearchResultSerializer = jsonSearchResultSerializer{}

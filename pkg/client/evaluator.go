@@ -1,10 +1,11 @@
 package client
 
 import (
-	"github.com/sonirico/visigoth/pkg/entities"
 	"log"
 	"strings"
 	"sync/atomic"
+
+	"github.com/sonirico/visigoth/pkg/entities"
 
 	"github.com/sonirico/visigoth/internal/search"
 

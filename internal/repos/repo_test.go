@@ -87,7 +87,7 @@ func Test_IndexRepo_Search_By_AliasSeveralPointedIndices(t *testing.T) {
 	for {
 		item, done := res.Next()
 		if item != nil {
-			doc := item.Doc().Id()
+			doc := item.Doc().ID()
 			_, ok := expectedDocuments[doc]
 			expectedDocuments[doc] = ok
 		}

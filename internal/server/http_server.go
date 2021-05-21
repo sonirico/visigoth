@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sonirico/visigoth/internal/repos"
-	"github.com/sonirico/visigoth/internal/search"
-	"github.com/sonirico/visigoth/pkg/entities"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/sonirico/visigoth/internal/repos"
+	"github.com/sonirico/visigoth/internal/search"
+	"github.com/sonirico/visigoth/pkg/entities"
 )
 
 type PutRequestPayload struct {
@@ -42,15 +43,15 @@ var (
 	indexDoesNotExistResponse, _ = json.Marshal(ErrorResponse{
 		Message: "Index not found",
 	})
-	defaultEngine     = search.LinearSearchEngine
-	defaultSerializer = search.JsonHitsSearchResultSerializer
+	defaultEngine     = search.HitsSearchEngine
+	defaultSerializer = search.JSONHitsSearchResultSerializer
 )
 
-type apiController struct {
+type APIController struct {
 	repo repos.IndexRepo
 }
 
-func (s *apiController) handleAlias(w http.ResponseWriter, r *http.Request) {
+func (s *APIController) handleAlias(w http.ResponseWriter, r *http.Request) {
 	switch verb := r.Method; {
 	case verb == http.MethodDelete:
 		w.Header().Set("content-type", "application/json")
@@ -93,7 +94,7 @@ func (s *apiController) handleAlias(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *apiController) handleHealth(w http.ResponseWriter, r *http.Request) {
+func (s *APIController) handleHealth(w http.ResponseWriter, r *http.Request) {
 	if http.MethodGet != r.Method {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -106,7 +107,7 @@ func (s *apiController) handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *apiController) handleSearch(w http.ResponseWriter, r *http.Request) {
+func (s *APIController) handleSearch(w http.ResponseWriter, r *http.Request) {
 	if http.MethodGet != r.Method {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -148,7 +149,7 @@ func (s *apiController) handleSearch(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("]}"))
 }
 
-func (s *apiController) handleIndex(w http.ResponseWriter, r *http.Request) {
+func (s *APIController) handleIndex(w http.ResponseWriter, r *http.Request) {
 	switch v := r.Method; {
 	case v == http.MethodDelete:
 		iname, err := parseIndex(r.URL.Path) // TODO: validate index name
@@ -189,7 +190,7 @@ func (s *apiController) handleIndex(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *apiController) Handler() http.Handler {
+func (s *APIController) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/search/", s.handleSearch)
 	mux.HandleFunc("/api/index/", s.handleIndex)
@@ -198,13 +199,13 @@ func (s *apiController) Handler() http.Handler {
 	return mux
 }
 
-func NewApiController(repo repos.IndexRepo) *apiController {
-	return &apiController{repo: repo}
+func NewAPIController(repo repos.IndexRepo) *APIController {
+	return &APIController{repo: repo}
 }
 
 type httpServer struct {
 	addr string
-	ctrl *apiController
+	ctrl *APIController
 }
 
 func (s *httpServer) Serve(ctx context.Context) {
@@ -212,17 +213,15 @@ func (s *httpServer) Serve(ctx context.Context) {
 	server := http.Server{Addr: s.addr, Handler: handler}
 	go func() {
 		if err := server.ListenAndServe(); err != nil {
-			log.Println("apiController, listenAndServeError", err)
+			log.Println("APIController, listenAndServeError", err)
 		}
 	}()
-	select {
-	case <-ctx.Done():
-		if err := server.Shutdown(ctx); err != nil {
-			log.Println("htpServer, error on shutdown", err)
-		}
+	<-ctx.Done()
+	if err := server.Shutdown(ctx); err != nil {
+		log.Println("htpServer, error on shutdown", err)
 	}
 }
 
-func NewHttpServer(addr string, repo repos.IndexRepo) Server {
-	return &httpServer{addr: addr, ctrl: NewApiController(repo)}
+func NewHTTPServer(addr string, repo repos.IndexRepo) Server {
+	return &httpServer{addr: addr, ctrl: NewAPIController(repo)}
 }

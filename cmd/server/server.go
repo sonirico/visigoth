@@ -4,43 +4,42 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"log"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+
 	vindex "github.com/sonirico/visigoth/internal/index"
 	"github.com/sonirico/visigoth/internal/repos"
 	"github.com/sonirico/visigoth/internal/server"
 	"github.com/sonirico/visigoth/pkg/analyze"
 	"github.com/sonirico/visigoth/pkg/entities"
-	"log"
-	"os"
-	"os/signal"
-	"strings"
 )
 
 var (
-	bindToTcp  string
-	bindToHttp string
+	bindToTCP  string
+	bindToHTTP string
 )
 
 type healthIndex struct {
 	Ok bool `json:"ok"`
 }
 
-func init() {
-	flag.StringVar(&bindToHttp, "http", "localhost:7374", "HTTP port to bind to")
-	flag.StringVar(&bindToTcp, "tcp", "localhost:7373", "TCP port to bind to")
+func main() {
+	flag.StringVar(&bindToHTTP, "http", "localhost:7374", "HTTP port to bind to")
+	flag.StringVar(&bindToTCP, "tcp", "localhost:7373", "TCP port to bind to")
 	flag.Parse()
 
-	if strings.Compare(strings.TrimSpace(bindToHttp), "") == 0 {
+	if strings.Compare(strings.TrimSpace(bindToHTTP), "") == 0 {
 		log.Fatal("-http parameter is required")
 	}
 
-	if strings.Compare(strings.TrimSpace(bindToTcp), "") == 0 {
+	if strings.Compare(strings.TrimSpace(bindToTCP), "") == 0 {
 		log.Fatal("-tcp parameter is required")
 	}
-}
-
-func main() {
-	signals := make(chan os.Signal)
-	signal.Notify(signals, os.Kill, os.Interrupt)
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGTERM, os.Interrupt)
 	ctx, cancel := context.WithCancel(context.Background())
 	tokenizer := analyze.NewKeepAlphanumericTokenizer()
 	analyzer := analyze.NewTokenizationPipeline(&tokenizer,
@@ -50,8 +49,8 @@ func main() {
 	repo := repos.NewIndexRepo(vindex.NewMemoryIndexBuilder(&analyzer))
 	node := server.NewNode(repo)
 	transporter := server.NewVTPTransport()
-	tcpServer := server.NewTcpServer(bindToTcp, node, transporter)
-	httpServer := server.NewHttpServer(bindToHttp, repo)
+	tcpServer := server.NewTCPServer(bindToTCP, node, transporter)
+	httpServer := server.NewHTTPServer(bindToHTTP, repo)
 	done := make(chan struct{})
 
 	go func() {
@@ -61,13 +60,13 @@ func main() {
 	}()
 
 	go func() {
-		log.Println("tcp server listening on ", bindToTcp)
+		log.Println("tcp server listening on ", bindToTCP)
 		tcpServer.Serve(ctx)
 		log.Println("tcp server shutdown")
 	}()
 
 	go func() {
-		log.Println("http server listening on ", bindToHttp)
+		log.Println("http server listening on ", bindToHTTP)
 		httpServer.Serve(ctx)
 		log.Println("http server shutdown")
 	}()

@@ -14,11 +14,10 @@ type StopWordsFilter struct {
 
 func (s StopWordsFilter) Filter(tokens []string) []string {
 	var (
-		r  = make([]string, 0, len(tokens))
-		ok = false
+		r = make([]string, 0, len(tokens))
 	)
 	for _, tok := range tokens {
-		if _, ok = s.stopWords[tok]; !ok {
+		if _, ok := s.stopWords[tok]; !ok {
 			r = append(r, tok)
 		}
 	}

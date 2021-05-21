@@ -40,8 +40,7 @@ type indexRepo struct {
 	aliases   map[string][]string
 	aliasesMu sync.RWMutex
 
-	writers      chan struct{}
-	indexBuilder vindex.IndexBuilder
+	indexBuilder vindex.Builder
 }
 
 func (h *indexRepo) List() []string {
@@ -105,38 +104,36 @@ func (h *indexRepo) Alias(alias string, index string) bool {
 }
 
 func (h *indexRepo) UnAlias(alias, index string) bool {
-	if len(index) > 0 {
-		// only remove an index-alias association
-		h.indicesMu.RLock()
-		if _, ok := h.indices[index]; !ok {
-			return false
-		}
-		h.indicesMu.RUnlock()
-		h.aliasesMu.Lock()
-		indices, ok := h.aliases[alias]
-		if !ok {
-			return false
-		}
-		// alias already exists, check if already has the index
-		// TODO: improve
-		var newIndices []string
-		for _, aliasedIndexName := range indices {
-			if aliasedIndexName != index {
-				newIndices = append(newIndices, aliasedIndexName)
-			}
-		}
-		if len(newIndices) != len(indices) {
-			h.aliases[alias] = newIndices
-		}
-		h.aliasesMu.Unlock()
-	} else {
-		// remove the entire alias if no index is specified
+	if len(index) == 0 { // remove the entire alias if no index is specified
 		h.aliasesMu.Lock()
 		_, ok := h.aliases[alias]
 		delete(h.aliases, alias)
 		h.aliasesMu.Unlock()
 		return ok
 	}
+	// only remove an index-alias association
+	h.indicesMu.RLock()
+	if _, ok := h.indices[index]; !ok {
+		return false
+	}
+	h.indicesMu.RUnlock()
+	h.aliasesMu.Lock()
+	indices, ok := h.aliases[alias]
+	if !ok {
+		return false
+	}
+	// alias already exists, check if already has the index
+	// TODO: improve
+	var newIndices []string
+	for _, aliasedIndexName := range indices {
+		if aliasedIndexName != index {
+			newIndices = append(newIndices, aliasedIndexName)
+		}
+	}
+	if len(newIndices) != len(indices) {
+		h.aliases[alias] = newIndices
+	}
+	h.aliasesMu.Unlock()
 	return true
 }
 
@@ -219,7 +216,6 @@ func (h *indexRepo) Put(indexName string, doc entities.DocRequest) {
 	}
 	wg.Wait()
 	h.indicesMu.Unlock()
-	return
 }
 
 func (h *indexRepo) Drop(indexName string) bool {
@@ -300,7 +296,7 @@ func (h *indexRepo) String() string {
 	return buf.String()
 }
 
-func NewIndexRepo(builder vindex.IndexBuilder) IndexRepo {
+func NewIndexRepo(builder vindex.Builder) IndexRepo {
 	return &indexRepo{
 		indices:      make(map[string]vindex.Index),
 		indicesMu:    sync.RWMutex{},

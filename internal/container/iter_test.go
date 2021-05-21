@@ -41,7 +41,7 @@ func TestResultIterator_Chain(t *testing.T) {
 	for {
 		item, done := finalIter.Next()
 		if item != nil {
-			value := item.Doc().Id()
+			value := item.Doc().ID()
 			log.Println(value)
 			if value != expected[ei] {
 				t.Fatalf("unexpected yielded result. want '%s', have '%s'",

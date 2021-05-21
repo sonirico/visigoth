@@ -19,6 +19,7 @@ func isVowel(r rune) (ok bool) {
 	return
 }
 
+//nolint:nakedret,gomnd
 func R1R2RV(w []byte) (r1 []byte, r2 []byte, rv []byte) {
 	// UTF8 implicit!
 	foundVowel := false
@@ -71,52 +72,53 @@ func R1R2RV(w []byte) (r1 []byte, r2 []byte, rv []byte) {
 	// RV. If the second letter is a consonant, RV is the region after the next following vowel, or if the first
 	// two letters are vowels, RV is the region after the next consonant, and otherwise (consonant-vowel case) RV
 	// is the region after the third letter. But RV is the end of the word if these positions cannot be found.
-	if len(runes) > 2 {
-		foundNonVowel = false
-		foundVowel = false
-		if runes[0].IsVowel && runes[1].IsVowel {
-			i := 2
-			for ; i < runesLength; i++ {
-				run := runes[i]
-				if foundNonVowel {
-					rv = w[run.Index:]
-					return
-				}
-				if !run.IsVowel {
-					foundNonVowel = true
-				}
-			}
-		}
-
-		if !runes[1].IsVowel {
-			i := 2
-			for ; i < runesLength; i++ {
-				run := runes[i]
-				if foundVowel {
-					rv = w[run.Index:]
-					return
-				}
-				if run.IsVowel {
-					foundVowel = true
-				}
-			}
-		}
-
-		if runesLength > 3 && !runes[0].IsVowel && runes[1].IsVowel {
-			rv = w[runes[3].Index:]
-			return
-		}
-
+	if len(runes) < 3 {
+		return
 	}
+	foundNonVowel = false
+	foundVowel = false
+	if runes[0].IsVowel && runes[1].IsVowel {
+		i := 2
+		for ; i < runesLength; i++ {
+			run := runes[i]
+			if foundNonVowel {
+				rv = w[run.Index:]
+				return
+			}
+			if !run.IsVowel {
+				foundNonVowel = true
+			}
+		}
+	}
+
+	if !runes[1].IsVowel {
+		i := 2
+		for ; i < runesLength; i++ {
+			run := runes[i]
+			if foundVowel {
+				rv = w[run.Index:]
+				return
+			}
+			if run.IsVowel {
+				foundVowel = true
+			}
+		}
+	}
+
+	if runesLength > 3 && !runes[0].IsVowel && runes[1].IsVowel {
+		rv = w[runes[3].Index:]
+		return
+	}
+
 	return
 }
 
-type stemmer struct{}
+type Stemmer struct{}
 
-func (s *stemmer) Stem(w []byte) []byte {
+func (s *Stemmer) Stem(w []byte) []byte {
 	return nil
 }
 
-func NewSnowball() *stemmer {
-	return new(stemmer)
+func NewSnowball() *Stemmer {
+	return new(Stemmer)
 }

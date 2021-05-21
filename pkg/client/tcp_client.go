@@ -3,12 +3,13 @@ package client
 import (
 	"bytes"
 	"context"
-	"github.com/sonirico/visigoth/internal/server"
 	"io"
 	"log"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/sonirico/visigoth/internal/server"
 
 	"github.com/sonirico/visigoth/internal/search"
 	"github.com/sonirico/visigoth/pkg/entities"
@@ -130,9 +131,7 @@ func (c *TCPClient) connect() io.ReadWriteCloser {
 	}
 }
 
-func (c *TCPClient) Start(ctx context.Context) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+func (c *TCPClient) Start(_ context.Context) {
 	c.conn = c.connect()
 	if c.conn == nil {
 		return
@@ -159,7 +158,7 @@ func (c *TCPClient) Drop(index string, cb callback) {
 	msg := vtp.NewDropIndexRequest(c.counter.Inc(), Version, index)
 	c.requests <- msg
 	if cb != nil {
-		c.registerCallback(msg.Id(), cb)
+		c.registerCallback(msg.ID(), cb)
 	}
 }
 
@@ -167,7 +166,7 @@ func (c *TCPClient) ShowIndices(cb callback) {
 	msg := vtp.NewListIndicesRequest(c.counter.Inc(), Version)
 	c.requests <- msg
 	if cb != nil {
-		c.registerCallback(msg.Id(), cb)
+		c.registerCallback(msg.ID(), cb)
 	}
 }
 
@@ -175,7 +174,7 @@ func (c *TCPClient) Alias(index, alias string, cb callback) {
 	msg := vtp.NewAliasRequest(c.counter.Inc(), Version, index, alias)
 	c.requests <- msg
 	if cb != nil {
-		c.registerCallback(msg.Id(), cb)
+		c.registerCallback(msg.ID(), cb)
 	}
 }
 
@@ -183,7 +182,7 @@ func (c *TCPClient) UnAlias(index, alias string, cb callback) {
 	msg := vtp.NewUnAliasRequest(c.counter.Inc(), Version, index, alias)
 	c.requests <- msg
 	if cb != nil {
-		c.registerCallback(msg.Id(), cb)
+		c.registerCallback(msg.ID(), cb)
 	}
 }
 
@@ -191,7 +190,7 @@ func (c *TCPClient) Index(index, name, payload string, format entities.MimeType,
 	msg := vtp.NewIndexRequest(c.counter.Inc(), Version, index, name, payload, format)
 	c.requests <- msg
 	if cb != nil {
-		c.registerCallback(msg.Id(), cb)
+		c.registerCallback(msg.ID(), cb)
 	}
 }
 
@@ -199,7 +198,7 @@ func (c *TCPClient) Search(index, terms string, engine search.EngineType, cb cal
 	msg := vtp.NewSearchRequest(c.counter.Inc(), Version, uint8(engine), index, terms)
 	c.requests <- msg
 	if cb != nil {
-		c.registerCallback(msg.Id(), cb)
+		c.registerCallback(msg.ID(), cb)
 	}
 }
 
@@ -223,8 +222,8 @@ func (c *TCPClient) dispatchResponses() {
 		case res := <-c.responses:
 			c.callbackLock.Lock()
 			locked := true
-			if cb, ok := c.callbacks[res.Id()]; ok {
-				delete(c.callbacks, res.Id())
+			if cb, ok := c.callbacks[res.ID()]; ok {
+				delete(c.callbacks, res.ID())
 				// Prevents recursive locking by unlocking
 				// prior to the call to 'cb'
 				c.callbackLock.Unlock()

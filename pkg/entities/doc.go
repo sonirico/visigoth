@@ -9,7 +9,7 @@ func NewDoc(name, content string) Doc {
 	return Doc{Name: name, Content: content}
 }
 
-func (d Doc) Id() string {
+func (d Doc) ID() string {
 	return d.Name
 }
 

@@ -10,10 +10,10 @@ import (
 )
 
 var (
-	BigEndianCompiler = &compiler{
+	BigEndianCompiler = &BytesCompiler{
 		endian: binary.BigEndian,
 	}
-	BigEndianParser = &parser{
+	BigEndianParser = &BytesParser{
 		endian: binary.BigEndian,
 	}
 	VTPCompiler = NewVTPCompiler(BigEndianCompiler)
@@ -28,8 +28,8 @@ func testHeadEquals(t *testing.T, one, other Message) bool {
 		return false
 	}
 
-	if one.Id() != other.Id() {
-		t.Errorf("Id mismatch")
+	if one.ID() != other.ID() {
+		t.Errorf("ID mismatch")
 		return false
 	}
 
@@ -524,7 +524,7 @@ func TestCompile_BigEndian(t *testing.T) {
 				Text:   &StringType{"accion de hincar"},
 			},
 			expectedCode: []byte{
-				0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC, // Id
+				0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC, // ID
 				0x2,            // Version
 				byte(IndexReq), // MessageType
 				0x01,
@@ -551,7 +551,7 @@ func TestCompile_BigEndian(t *testing.T) {
 				Terms:      &StringType{Value: "hope"},
 			},
 			expectedCode: []byte{
-				0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFD, // Id
+				0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFD, // ID
 				0x1,             // Version
 				byte(SearchReq), // MessageType
 				byte(search.NoopAll),
@@ -574,7 +574,7 @@ func TestCompile_BigEndian(t *testing.T) {
 				Alias:  &StringType{"alias"},
 			},
 			expectedCode: []byte{
-				0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE, // Id
+				0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE, // ID
 				0x1,            // Version
 				byte(AliasReq), // MessageType
 				0x0A, byte('i'), byte('n'), byte('d'), byte('e'), byte('x'), byte('_'), byte('n'), byte('a'), byte('m'), byte('e'),

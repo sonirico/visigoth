@@ -2,6 +2,7 @@ package vtp
 
 import (
 	"fmt"
+
 	"github.com/sonirico/visigoth/pkg/entities"
 )
 
@@ -22,7 +23,7 @@ var (
 
 func MessageToString(m Message) string {
 	name, _ := messageTypeName[m.Type()]
-	return fmt.Sprintf("request{type=%s,id=%d,version=%d}", name, m.Id(), m.Version())
+	return fmt.Sprintf("request{type=%s,id=%d,version=%d}", name, m.ID(), m.Version())
 }
 
 func MessageTypeToByte(m MessageType) *ByteType {
@@ -102,7 +103,7 @@ func NewDropIndexRequest(id uint64, version uint8, index string) *DropIndexReque
 }
 
 func NewDropIndexResponse(id uint64, version uint8, ok bool, index string) *DropIndexResponse {
-	var okVal uint8 = 0
+	var okVal uint8
 	if ok {
 		okVal = 1
 	}
@@ -118,7 +119,7 @@ func NewDropIndexResponse(id uint64, version uint8, ok bool, index string) *Drop
 }
 
 func NewStatusResponse(id uint64, version uint8, ok bool) *StatusResponse {
-	var okVal uint8 = 0
+	var okVal uint8
 	if ok {
 		okVal = 1
 	}

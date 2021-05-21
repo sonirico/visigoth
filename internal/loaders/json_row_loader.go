@@ -11,6 +11,7 @@ import (
 
 const EOL = '\n'
 
+//nolint:structcheck,unused
 type LoadedDoc struct {
 	doc  []byte
 	text []byte
@@ -20,15 +21,15 @@ type Loader interface {
 	Load(reader io.Reader, writer io.Writer) error
 }
 
-type JsonRowLoader struct {
+type JSONRowLoader struct {
 	withKeys bool
 }
 
-func NewJSONRowLoader(withKeys bool) *JsonRowLoader {
-	return &JsonRowLoader{withKeys: withKeys}
+func NewJSONRowLoader(withKeys bool) *JSONRowLoader {
+	return &JSONRowLoader{withKeys: withKeys}
 }
 
-func (j *JsonRowLoader) Load(src io.Reader, dst io.Writer) error {
+func (j *JSONRowLoader) Load(src io.Reader, dst io.Writer) error {
 	buf := bufio.NewReader(src)
 	for {
 		by, err := buf.ReadBytes(EOL)

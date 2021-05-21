@@ -27,7 +27,7 @@ const (
 
 type Message interface {
 	String() string
-	Id() uint64
+	ID() uint64
 	Version() uint8
 	Type() MessageType
 }
@@ -38,7 +38,7 @@ type Head struct {
 	messageType *ByteType
 }
 
-func (h Head) Id() uint64 {
+func (h Head) ID() uint64 {
 	return h.id.Value
 }
 

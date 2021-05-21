@@ -23,15 +23,15 @@ type Parser interface {
 	ParseLongTextType(io.Reader) (*StringType, error)
 }
 
-type parser struct {
+type BytesParser struct {
 	endian binary.ByteOrder
 }
 
-func NewParser(endian binary.ByteOrder) *parser {
-	return &parser{endian}
+func NewParser(endian binary.ByteOrder) *BytesParser {
+	return &BytesParser{endian}
 }
 
-func (p *parser) ParseUInt8(src io.Reader) (uint8, error) {
+func (p *BytesParser) ParseUInt8(src io.Reader) (uint8, error) {
 	data := make([]byte, 1, 1)
 	if _, err := io.ReadFull(src, data); err != nil {
 		return 0, err
@@ -39,7 +39,7 @@ func (p *parser) ParseUInt8(src io.Reader) (uint8, error) {
 	return data[0], nil
 }
 
-func (p *parser) ParseUInt32(src io.Reader) (uint32, error) {
+func (p *BytesParser) ParseUInt32(src io.Reader) (uint32, error) {
 	data := make([]byte, 4, 4)
 	if _, err := io.ReadFull(src, data); err != nil {
 		return 0, err
@@ -47,16 +47,15 @@ func (p *parser) ParseUInt32(src io.Reader) (uint32, error) {
 	return p.endian.Uint32(data), nil
 }
 
-func (p *parser) ParseUInt64(src io.Reader) (uint64, error) {
+func (p *BytesParser) ParseUInt64(src io.Reader) (uint64, error) {
 	data := make([]byte, 8, 8)
 	if _, err := io.ReadFull(src, data); err != nil {
 		return 0, err
 	}
 	return p.endian.Uint64(data), nil
-
 }
 
-func (p *parser) ParseString(src io.Reader) (string, error) {
+func (p *BytesParser) ParseString(src io.Reader) (string, error) {
 	l, err := p.ParseUInt8(src)
 	if err != nil {
 		return "", err
@@ -68,7 +67,7 @@ func (p *parser) ParseString(src io.Reader) (string, error) {
 	return string(data), nil
 }
 
-func (p *parser) ParseText(src io.Reader) (string, error) {
+func (p *BytesParser) ParseText(src io.Reader) (string, error) {
 	l, err := p.ParseUInt32(src)
 	if err != nil {
 		return "", err
@@ -80,7 +79,7 @@ func (p *parser) ParseText(src io.Reader) (string, error) {
 	return string(data), nil
 }
 
-func (p *parser) ParseLongText(src io.Reader) (string, error) {
+func (p *BytesParser) ParseLongText(src io.Reader) (string, error) {
 	l, err := p.ParseUInt64(src)
 	if err != nil {
 		return "", err
@@ -92,32 +91,32 @@ func (p *parser) ParseLongText(src io.Reader) (string, error) {
 	return string(data), nil
 }
 
-func (p *parser) ParseByteType(src io.Reader) (*ByteType, error) {
+func (p *BytesParser) ParseByteType(src io.Reader) (*ByteType, error) {
 	val, err := p.ParseUInt8(src)
 	return &ByteType{Value: val}, err
 }
 
-func (p *parser) ParseUInt32Type(src io.Reader) (*UInt32Type, error) {
+func (p *BytesParser) ParseUInt32Type(src io.Reader) (*UInt32Type, error) {
 	val, err := p.ParseUInt32(src)
 	return &UInt32Type{Value: val}, err
 }
 
-func (p *parser) ParseUInt64Type(src io.Reader) (*UInt64Type, error) {
+func (p *BytesParser) ParseUInt64Type(src io.Reader) (*UInt64Type, error) {
 	val, err := p.ParseUInt64(src)
 	return &UInt64Type{Value: val}, err
 }
 
-func (p *parser) ParseStringType(src io.Reader) (*StringType, error) {
+func (p *BytesParser) ParseStringType(src io.Reader) (*StringType, error) {
 	str, err := p.ParseString(src)
 	return &StringType{Value: str}, err
 }
 
-func (p *parser) ParseTextType(src io.Reader) (*StringType, error) {
+func (p *BytesParser) ParseTextType(src io.Reader) (*StringType, error) {
 	str, err := p.ParseText(src)
 	return &StringType{Value: str}, err
 }
 
-func (p *parser) ParseLongTextType(src io.Reader) (*StringType, error) {
+func (p *BytesParser) ParseLongTextType(src io.Reader) (*StringType, error) {
 	str, err := p.ParseLongText(src)
 	return &StringType{Value: str}, err
 }
@@ -198,7 +197,7 @@ func ParseHitsSearchResponse(head *Head, src io.Reader, parser Parser) (*HitsSea
 		return nil, err
 	}
 	documents := make([]*HitsResponseRow, count)
-	var i uint32 = 0
+	var i uint32
 	for i < count {
 		hits, err := parser.ParseUInt32Type(src)
 		if err != nil {
@@ -409,7 +408,7 @@ type vtpParser struct {
 	Parser
 }
 
-func NewVTPParser(parser Parser) *vtpParser {
+func NewVTPParser(parser Parser) ProtoParser {
 	return &vtpParser{Parser: parser}
 }
 

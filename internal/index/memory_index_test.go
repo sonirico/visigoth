@@ -1,10 +1,11 @@
 package index
 
 import (
+	"testing"
+
 	"github.com/sonirico/visigoth/internal/search"
 	"github.com/sonirico/visigoth/pkg/analyze"
 	"github.com/sonirico/visigoth/pkg/entities"
-	"testing"
 )
 
 type testResultRow struct {
@@ -83,7 +84,7 @@ func assertSearchReturns(t *testing.T, index Index, tests []testSearch) {
 			}
 			if !found {
 				t.Fatalf("'%s' document is missing, but should be present",
-					erow.Doc().Id())
+					erow.Doc().ID())
 			}
 		}
 	}

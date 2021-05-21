@@ -12,6 +12,7 @@ type HashKey struct {
 
 func (d Doc) Hash() HashKey {
 	hash := fnv.New64()
-	_, _ = hash.Write([]byte(d.Id()))
+	_, _ = hash.Write([]byte(d.ID()))
+
 	return HashKey{value: hash.Sum64()}
 }

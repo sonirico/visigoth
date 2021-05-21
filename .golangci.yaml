@@ -1,0 +1,29 @@
+linters:
+  fast: false
+  enable-all: true
+  disable:
+    - gocyclo
+    - cyclop
+    - exhaustive
+    - exhaustivestruct
+    - funlen
+    - gocognit
+    - gocritic
+    - gci
+    - godot
+    - godox
+    - goimports
+    - goerr113
+    - gomnd
+    - gofmt
+    - gofumpt
+    - gochecknoglobals
+    - gosimple
+    - nlreturn
+    - predeclared
+    - revive
+    - tagliatelle
+    - typecheck
+    - misspell
+    - wrapcheck
+    - wsl

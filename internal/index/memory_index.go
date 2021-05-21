@@ -3,6 +3,7 @@ package index
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/sonirico/visigoth/pkg/entities"
 
 	"github.com/sonirico/visigoth/internal/search"
@@ -74,7 +75,7 @@ func NewMemoryIndex(name string, tkr tokenizer) *MemoryIndex {
 	}
 }
 
-func NewMemoryIndexBuilder(tokenizer tokenizer) IndexBuilder {
+func NewMemoryIndexBuilder(tokenizer tokenizer) Builder {
 	return func(name string) Index {
 		return NewMemoryIndex(name, tokenizer)
 	}

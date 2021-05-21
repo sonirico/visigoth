@@ -21,4 +21,4 @@ type Index interface {
 	Search(terms string, engine search.Engine) entities.Iterator
 }
 
-type IndexBuilder func(name string) Index
+type Builder func(name string) Index

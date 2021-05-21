@@ -8,8 +8,9 @@ LD_FLAGS := -X main.version=$(VERSION) -s -w
 SOURCE_FILES ?=./internal/... ./pkg/...
 TEST_PATTERN ?=.
 TEST_OPTIONS ?=-v -failfast -race -bench=. -benchtime=1000000x -benchmem
+TEST_OPTIONS =-v -failfast -race
 TEST_TIMEOUT ?=2m
-LINT_VERSION := 1.15.0
+LINT_VERSION := 1.40.1
 
 export XC_OS
 export XC_ARCH
@@ -65,6 +66,7 @@ dist:
 
 .PHONY: fmt
 fmt:
+format:
 	@scripts/fmt.sh
 
 .PHONY: lint

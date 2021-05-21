@@ -21,7 +21,7 @@ const (
 	PLUS     = "+"
 	MINUS    = "-"
 	EQ       = "=="
-	NOT_EQ   = "!="
+	NotEq    = "!="
 	GT       = ">"
 	LT       = "<"
 	GTE      = ">="

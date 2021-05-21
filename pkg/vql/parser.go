@@ -60,10 +60,10 @@ func (p *Parser) expectPeekToken(Type TokenType) bool {
 	if p.peekTokenIs(Type) {
 		p.nextToken()
 		return true
-	} else {
-		p.peekError(Type)
-		return false
 	}
+
+	p.peekError(Type)
+	return false
 }
 
 func (p *Parser) parseStatement() Statement {
@@ -109,7 +109,6 @@ func (p *Parser) parseUnAliasStatement() Statement {
 	}
 
 	return unalias
-
 }
 
 func (p *Parser) parseAliasStatement() Statement {

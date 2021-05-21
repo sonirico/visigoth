@@ -9,9 +9,7 @@ if [ -z "$files" ]; then
     exit 0
 fi
 
-gofmt_files=$(gofmt -l $files)
-
-for file in $gofmt_files 
+for file in $files
 do
     gofmt -w -s $file
     goimports -w $file

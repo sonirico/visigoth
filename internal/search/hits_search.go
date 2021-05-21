@@ -1,9 +1,10 @@
 package search
 
 import (
+	"sort"
+
 	"github.com/sonirico/visigoth/internal/container"
 	"github.com/sonirico/visigoth/pkg/entities"
-	"sort"
 )
 
 type HitsSearchRow interface {

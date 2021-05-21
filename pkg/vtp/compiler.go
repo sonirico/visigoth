@@ -24,22 +24,22 @@ type Compiler interface {
 	CompileBlobType(io.Writer, *BlobType) error
 }
 
-type compiler struct {
+type BytesCompiler struct {
 	endian binary.ByteOrder
 }
 
-func NewCompiler(endian binary.ByteOrder) *compiler {
-	return &compiler{endian}
+func NewCompiler(endian binary.ByteOrder) *BytesCompiler {
+	return &BytesCompiler{endian}
 }
 
-func (c *compiler) CompileUInt8(w io.Writer, u8 uint8) error {
+func (c *BytesCompiler) CompileUInt8(w io.Writer, u8 uint8) error {
 	if _, err := w.Write([]byte{u8}); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *compiler) CompileUInt32(w io.Writer, u32 uint32) error {
+func (c *BytesCompiler) CompileUInt32(w io.Writer, u32 uint32) error {
 	data := make([]byte, 4)
 	c.endian.PutUint32(data, u32)
 	if _, err := w.Write(data); err != nil {
@@ -48,7 +48,7 @@ func (c *compiler) CompileUInt32(w io.Writer, u32 uint32) error {
 	return nil
 }
 
-func (c *compiler) CompileUInt64(w io.Writer, u64 uint64) error {
+func (c *BytesCompiler) CompileUInt64(w io.Writer, u64 uint64) error {
 	data := make([]byte, 8)
 	c.endian.PutUint64(data, u64)
 	if _, err := w.Write(data); err != nil {
@@ -57,37 +57,37 @@ func (c *compiler) CompileUInt64(w io.Writer, u64 uint64) error {
 	return nil
 }
 
-func (c *compiler) CompileString(w io.Writer, s string) error {
+func (c *BytesCompiler) CompileString(w io.Writer, s string) error {
 	if _, err := w.Write([]byte(s)); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *compiler) CompileByteType(w io.Writer, bt *ByteType) error {
+func (c *BytesCompiler) CompileByteType(w io.Writer, bt *ByteType) error {
 	return c.CompileUInt8(w, bt.Value)
 }
 
-func (c *compiler) CompileUInt32Type(w io.Writer, u32 *UInt32Type) error {
+func (c *BytesCompiler) CompileUInt32Type(w io.Writer, u32 *UInt32Type) error {
 	return c.CompileUInt32(w, u32.Value)
 }
 
-func (c *compiler) CompileUInt64Type(w io.Writer, u64 *UInt64Type) error {
+func (c *BytesCompiler) CompileUInt64Type(w io.Writer, u64 *UInt64Type) error {
 	return c.CompileUInt64(w, u64.Value)
 }
 
-func (c *compiler) CompileMessageType(w io.Writer, mt MessageType) error {
+func (c *BytesCompiler) CompileMessageType(w io.Writer, mt MessageType) error {
 	return c.CompileUInt8(w, uint8(mt))
 }
 
-func (c *compiler) CompileStringType(w io.Writer, s *StringType) error {
+func (c *BytesCompiler) CompileStringType(w io.Writer, s *StringType) error {
 	if _, err := w.Write([]byte(s.Value)); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *compiler) CompileVarcharType(w io.Writer, s *StringType) error {
+func (c *BytesCompiler) CompileVarcharType(w io.Writer, s *StringType) error {
 	if err := c.CompileUInt32(w, uint32(len(s.Value))); err != nil {
 		return err
 	}
@@ -98,19 +98,19 @@ func (c *compiler) CompileVarcharType(w io.Writer, s *StringType) error {
 	return nil
 }
 
-func (c *compiler) CompileBlobType(w io.Writer, b *BlobType) error {
+func (c *BytesCompiler) CompileBlobType(w io.Writer, b *BlobType) error {
 	if _, err := w.Write(b.Value); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *compiler) CompileHead(w io.Writer, m Message, comp Compiler) error {
+func (c *BytesCompiler) CompileHead(w io.Writer, m Message, comp Compiler) error {
 	return compileHead(w, m, comp)
 }
 
 func compileHead(w io.Writer, m Message, comp Compiler) error {
-	if err := comp.CompileUInt64(w, m.Id()); err != nil {
+	if err := comp.CompileUInt64(w, m.ID()); err != nil {
 		return err
 	}
 	if err := comp.CompileUInt8(w, m.Version()); err != nil {
@@ -394,7 +394,7 @@ func (v *vtpCompiler) Compile(w io.Writer, msg Message) error {
 	return Compile(w, msg, v)
 }
 
-func NewVTPCompiler(comp Compiler) *vtpCompiler {
+func NewVTPCompiler(comp Compiler) ProtoCompiler {
 	return &vtpCompiler{
 		Compiler: comp,
 	}

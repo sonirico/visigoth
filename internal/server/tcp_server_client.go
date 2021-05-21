@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -14,15 +15,15 @@ type Client interface {
 	Handle(wire io.ReadWriteCloser, node Node)
 }
 
-type TcpClient struct {
+type TCPClient struct {
 	id        uint64
 	requests  chan vtp.Message
 	responses chan vtp.Message
 	transport *VTPTransport
 }
 
-func NewTcpClient(id uint64, transport *VTPTransport) *TcpClient {
-	return &TcpClient{
+func NewTCPClient(id uint64, transport *VTPTransport) *TCPClient {
+	return &TCPClient{
 		id:        id,
 		requests:  make(chan vtp.Message), // TODO: configure size, otherwise new data will not be parsed due to the unbuffered channel
 		responses: make(chan vtp.Message),
@@ -30,12 +31,12 @@ func NewTcpClient(id uint64, transport *VTPTransport) *TcpClient {
 	}
 }
 
-func (c *TcpClient) String() string {
+func (c *TCPClient) String() string {
 	return fmt.Sprintf("client{id=%d,reqBuf=%d,resBuf=%d}",
 		c.id, len(c.requests), len(c.responses))
 }
 
-func (c *TcpClient) Handle(ctx context.Context, wire io.ReadWriteCloser, node Node) {
+func (c *TCPClient) Handle(ctx context.Context, wire io.ReadWriteCloser, node Node) {
 	log.Println(c, "connected")
 	defer func() {
 		err := recover()
@@ -50,17 +51,17 @@ func (c *TcpClient) Handle(ctx context.Context, wire io.ReadWriteCloser, node No
 	c.write(ctx, wire)
 }
 
-func (c *TcpClient) read(ctx context.Context, wire io.Reader, node Node) {
+func (c *TCPClient) read(ctx context.Context, wire io.Reader, node Node) {
 	go func() {
 		if err := vtp.ParseStream(ctx, wire, c.transport.Parser, c.requests); err != nil {
 			close(c.requests)
 			close(c.responses)
 
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				log.Println(c, "disconnected")
 				return
 			}
-			if err == io.ErrUnexpectedEOF {
+			if errors.Is(err, io.ErrUnexpectedEOF) {
 				log.Println(fmt.Sprintf("client parser error with id %d, %s", c.id, err.Error()))
 				return
 			}
@@ -72,7 +73,7 @@ func (c *TcpClient) read(ctx context.Context, wire io.Reader, node Node) {
 	node.Run(c.requests, c.responses, &NodeConfig{tracer: c.trace})
 }
 
-func (c *TcpClient) write(ctx context.Context, wire io.Writer) {
+func (c *TCPClient) write(ctx context.Context, wire io.Writer) {
 	buf := new(bytes.Buffer)
 	for {
 		select {
@@ -101,6 +102,6 @@ func (c *TcpClient) write(ctx context.Context, wire io.Writer) {
 	}
 }
 
-func (c *TcpClient) trace(msg vtp.Message) {
+func (c *TCPClient) trace(msg vtp.Message) {
 	log.Println(fmt.Sprintf("%s -> %s", c, vtp.MessageToString(msg)))
 }

@@ -78,25 +78,25 @@ func (n *node) dispatch(req vtp.Message) vtp.Message {
 }
 
 func (n *node) handleAliasRequest(msg vtp.Message) *vtp.StatusResponse {
-	req := msg.(*vtp.AliasRequest)
+	req, _ := msg.(*vtp.AliasRequest)
 	ok := n.repo.Alias(req.Alias.Value, req.Source.Value)
-	return vtp.NewStatusResponse(msg.Id(), msg.Version(), ok)
+	return vtp.NewStatusResponse(msg.ID(), msg.Version(), ok)
 }
 
 func (n *node) handleUnAliasRequest(msg vtp.Message) *vtp.StatusResponse {
-	req := msg.(*vtp.UnAliasRequest)
+	req, _ := msg.(*vtp.UnAliasRequest)
 	ok := n.repo.UnAlias(req.Alias.Value, req.Index.Value)
-	return vtp.NewStatusResponse(msg.Id(), msg.Version(), ok)
+	return vtp.NewStatusResponse(msg.ID(), msg.Version(), ok)
 }
 
 func (n *node) handleDropRequest(msg vtp.Message) *vtp.DropIndexResponse {
-	req := msg.(*vtp.DropIndexRequest)
+	req, _ := msg.(*vtp.DropIndexRequest)
 	ok := n.repo.Drop(req.Index.Value)
-	return vtp.NewDropIndexResponse(msg.Id(), msg.Version(), ok, req.Index.Value)
+	return vtp.NewDropIndexResponse(msg.ID(), msg.Version(), ok, req.Index.Value)
 }
 
 func (n *node) handleIndexRequest(msg vtp.Message) *vtp.StatusResponse {
-	req := msg.(*vtp.IndexRequest)
+	req, _ := msg.(*vtp.IndexRequest)
 	var statement string
 	in := bytes.NewBufferString(req.Text.Value)
 	out := bytes.NewBuffer(nil)
@@ -145,14 +145,14 @@ func (n *node) handleSearchRequest(msg vtp.Message) vtp.Message {
 	case search.Linear:
 		engine = search.LinearSearchEngine
 	default:
-		return vtp.NewStatusResponse(req.Id(), req.Version(), false)
+		return vtp.NewStatusResponse(req.ID(), req.Version(), false)
 	}
 
 	results, err := n.repo.Search(index, terms, engine)
 
 	if err != nil {
 		log.Println(err)
-		return vtp.NewStatusResponse(req.Id(), req.Version(), false)
+		return vtp.NewStatusResponse(req.ID(), req.Version(), false)
 	}
 
 	res := &vtp.HitsSearchResponse{
@@ -170,7 +170,7 @@ func (n *node) handleSearchRequest(msg vtp.Message) vtp.Message {
 			case search.HitsSearchRow:
 				doc := &vtp.HitsResponseRow{
 					Document: &vtp.DocumentView{
-						Name:    &vtp.StringType{Value: mrow.Doc().Id()},
+						Name:    &vtp.StringType{Value: mrow.Doc().ID()},
 						Content: &vtp.StringType{Value: mrow.Doc().Raw()},
 					},
 					Hits: &vtp.UInt32Type{Value: uint32(mrow.Hits())},
@@ -179,7 +179,7 @@ func (n *node) handleSearchRequest(msg vtp.Message) vtp.Message {
 			default:
 				doc := &vtp.HitsResponseRow{
 					Document: &vtp.DocumentView{
-						Name:    &vtp.StringType{Value: mrow.Doc().Id()},
+						Name:    &vtp.StringType{Value: mrow.Doc().ID()},
 						Content: &vtp.StringType{Value: mrow.Doc().Raw()},
 					},
 					Hits: &vtp.UInt32Type{Value: 1},

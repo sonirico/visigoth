@@ -3,7 +3,7 @@ package vtp
 import "errors"
 
 var (
-	UnknownMessageType     = errors.New("unknown message type")
+	ErrUnknownMessageType  = errors.New("unknown message type")
 	responseMessageTypeMap = map[MessageType]MessageType{
 		ListReq:        ListRes,
 		SearchReq:      SearchRes,
@@ -18,7 +18,7 @@ var (
 func LookupResponseMessageType(req MessageType) (MessageType, error) {
 	msgType, ok := responseMessageTypeMap[req]
 	if !ok {
-		return 0, UnknownMessageType
+		return 0, ErrUnknownMessageType
 	}
 	return msgType, nil
 }
@@ -82,7 +82,7 @@ func NewHeadResponse(req Message) *Head {
 		panic(err)
 	}
 	return &Head{
-		id:          &UInt64Type{Value: req.Id()},
+		id:          &UInt64Type{Value: req.ID()},
 		version:     &ByteType{Value: req.Version()}, // Sure?
 		messageType: &ByteType{Value: uint8(msgType)},
 	}

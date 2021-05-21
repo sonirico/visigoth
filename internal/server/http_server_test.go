@@ -3,11 +3,12 @@ package server
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/sonirico/visigoth/pkg/analyze"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/sonirico/visigoth/pkg/analyze"
 
 	vindex "github.com/sonirico/visigoth/internal/index"
 	"github.com/sonirico/visigoth/internal/repos"
@@ -29,7 +30,7 @@ func newIndexRepo() repos.IndexRepo {
 
 func TestIndexHttpServer_ServeHTTP_Search(t *testing.T) {
 	repo := newIndexRepo()
-	server := NewApiController(repo).Handler()
+	server := NewAPIController(repo).Handler()
 
 	// Set up server state
 	repo.Put("languages", entities.NewDocRequest("rust", "lenguaje con compilador grunon"))
@@ -171,7 +172,7 @@ func TestIndexHttpServer_ServeHTTP_Index(t *testing.T) {
 			if test.init != nil {
 				test.init(repo)
 			}
-			server := NewApiController(repo).Handler()
+			server := NewAPIController(repo).Handler()
 			server.ServeHTTP(res, req)
 
 			if res.Code != test.expectedCode {
@@ -247,7 +248,7 @@ func TestIndexHttpServer_ServeHTTP_Alias(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := httptest.NewRequest(test.method, test.uri, bytes.NewReader(test.data))
 			res := httptest.NewRecorder()
-			server := NewApiController(repo).Handler()
+			server := NewAPIController(repo).Handler()
 			server.ServeHTTP(res, req)
 
 			if res.Code != test.expectedCode {

@@ -41,7 +41,7 @@ func (l *Lexer) readChar() bool {
 	}
 
 	l.currentPosition = l.nextPosition
-	l.nextPosition += 1
+	l.nextPosition++
 	return end
 }
 
@@ -64,28 +64,20 @@ func (l *Lexer) NextToken() (Token, error) {
 		tok = newToken(COMMA, l.currentChar)
 	case '{':
 		tok = newToken(LBRACE, l.currentChar)
-		break
 	case '}':
 		tok = newToken(RBRACE, l.currentChar)
-		break
 	case '(':
 		tok = newToken(LPAREN, l.currentChar)
-		break
 	case ')':
 		tok = newToken(RPAREN, l.currentChar)
-		break
 	case ';':
 		tok = newToken(SEMICOLON, l.currentChar)
-		break
 	case '[':
 		tok = newToken(LBRACKET, l.currentChar)
-		break
 	case ']':
 		tok = newToken(RBRACKET, l.currentChar)
-		break
 	case ':':
 		tok = newToken(COLON, l.currentChar)
-		break
 	case '"', '\'':
 		prevChar := l.currentChar
 		if l.readChar() {
@@ -97,7 +89,6 @@ func (l *Lexer) NextToken() (Token, error) {
 			return IllegalToken, newErrorAtPosition(l.input, int(currentPos))
 		}
 		tok.Literal = literal
-		break
 	// Operators
 	case '<':
 		{
@@ -109,7 +100,6 @@ func (l *Lexer) NextToken() (Token, error) {
 			} else {
 				tok = newToken(LT, l.currentChar)
 			}
-			break
 		}
 	case '>':
 		{
@@ -121,36 +111,28 @@ func (l *Lexer) NextToken() (Token, error) {
 			} else {
 				tok = newToken(GT, l.currentChar)
 			}
-			break
 		}
 	case '!':
 		if l.peekChar() == '=' {
 			ch := l.currentChar
 			l.readChar()
-			tok.Type = NOT_EQ
+			tok.Type = NotEq
 			tok.Literal = string(ch) + string(l.currentChar)
 		} else {
 			tok = newToken(BANG, l.currentChar)
 		}
-		break
 	case '/':
 		tok = newToken(SLASH, l.currentChar)
-		break
 	case '+':
 		tok = newToken(PLUS, l.currentChar)
-		break
 	case '-':
 		tok = newToken(MINUS, l.currentChar)
-		break
 	case '*':
 		tok = newToken(ASTERISK, l.currentChar)
-		break
 	case '%':
 		tok = newToken(PERCENT, l.currentChar)
-		break
 	case '^':
 		tok = newToken(POWER, l.currentChar)
-		break
 	case '=':
 		{
 			ch := l.currentChar
@@ -159,16 +141,13 @@ func (l *Lexer) NextToken() (Token, error) {
 				l.readChar()
 				tok.Type = EQ
 				tok.Literal = string(ch) + string(l.currentChar)
-				break
 			default:
 				tok = newToken(ASSIGNMENT, l.currentChar)
 			}
 		}
-		break
 	case 0:
 		tok.Literal = ""
 		tok.Type = EOF
-		break
 	default:
 		if isDigit(l.currentChar) {
 			return Token{Type: INT, Literal: l.readNumber()}, nil

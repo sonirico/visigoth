@@ -15,17 +15,17 @@ type handler interface {
 	Handle(context.Context, io.ReadWriteCloser, Node)
 }
 
-type TcpServer struct {
+type TCPServer struct {
 	url       string
 	node      Node
 	transport *VTPTransport
 }
 
-func NewTcpServer(url string, node Node, tr *VTPTransport) *TcpServer {
-	return &TcpServer{url: url, node: node, transport: tr}
+func NewTCPServer(url string, node Node, tr *VTPTransport) *TCPServer {
+	return &TCPServer{url: url, node: node, transport: tr}
 }
 
-func (s *TcpServer) Serve(ctx context.Context) {
+func (s *TCPServer) Serve(ctx context.Context) {
 	link, err := net.Listen("tcp", s.url)
 	if err != nil {
 		log.Fatalln("tcpServer, listen", err)
@@ -37,8 +37,7 @@ func (s *TcpServer) Serve(ctx context.Context) {
 		}
 	}(link)
 
-	var clientCounter uint64 = 0
-
+	var clientCounter uint64
 	for {
 		conn, err := link.Accept()
 		select {
@@ -52,13 +51,13 @@ func (s *TcpServer) Serve(ctx context.Context) {
 				log.Println("error on accept")
 				log.Fatalln(err)
 			}
-			client := NewTcpClient(clientCounter, s.transport)
+			client := NewTCPClient(clientCounter, s.transport)
 			go s.accept(ctx, conn, client)
 			clientCounter++
 		}
 	}
 }
 
-func (s *TcpServer) accept(ctx context.Context, wire io.ReadWriteCloser, h handler) {
+func (s *TCPServer) accept(ctx context.Context, wire io.ReadWriteCloser, h handler) {
 	h.Handle(ctx, wire, s.node)
 }

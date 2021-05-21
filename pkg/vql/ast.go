@@ -171,10 +171,10 @@ type Query struct {
 func (q *Query) Literal() string {
 	if len(q.Statements) > 0 {
 		return q.Statements[0].Literal()
-	} else {
-		return ""
 	}
+	return ""
 }
+
 func (q *Query) String() string {
 	var buffer bytes.Buffer
 
