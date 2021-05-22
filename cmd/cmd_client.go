@@ -3,11 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/sonirico/visigoth/pkg/client"
 	"log"
 	"os"
 	"runtime"
 	"strings"
+
+	"github.com/sonirico/visigoth/pkg/client"
 )
 
 var (

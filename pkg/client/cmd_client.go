@@ -58,9 +58,9 @@ func (c *CmdClient) print(out io.Writer) {
 	}
 }
 
-func (c *CmdClient) read(scanner Scanner) string {
-	_ = scanner.Scan()
-	return scanner.Text()
+func (c *CmdClient) read(scanner Scanner) (string, bool) {
+	keep := scanner.Scan()
+	return scanner.Text(), !keep
 }
 
 func (c *CmdClient) Repl(in io.Reader, out io.Writer) {
@@ -75,7 +75,10 @@ func (c *CmdClient) Repl(in io.Reader, out io.Writer) {
 		c.wg.Wait() // Wait for all responses to be processed (eval + print) before reading next line
 		PrintEnv(out, c.evaluator.env)
 		printSafe(out, Prompt)
-		line := c.read(scanner)
+		line, quit := c.read(scanner)
+		if quit {
+			break
+		}
 		c.eval(line)
 	}
 }
