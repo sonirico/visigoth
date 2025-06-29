@@ -444,7 +444,9 @@ func TestCompile_BigEndian(t *testing.T) {
 				0x0, 0x0, 0x0, 0x04, // document name length
 				byte('n'), byte('a'), byte('m'), byte('e'), // document name
 				0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x07, // document content length
-				byte('c'), byte('o'), byte('n'), byte('t'), byte('e'), byte('n'), byte('t'), // document content
+				byte(
+					'c',
+				), byte('o'), byte('n'), byte('t'), byte('e'), byte('n'), byte('t'), // document content
 				// end row 1
 			},
 			compiler: VTPCompiler,

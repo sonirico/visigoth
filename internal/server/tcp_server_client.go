@@ -24,8 +24,10 @@ type TCPClient struct {
 
 func NewTCPClient(id uint64, transport *VTPTransport) *TCPClient {
 	return &TCPClient{
-		id:        id,
-		requests:  make(chan vtp.Message), // TODO: configure size, otherwise new data will not be parsed due to the unbuffered channel
+		id: id,
+		requests: make(
+			chan vtp.Message,
+		), // TODO: configure size, otherwise new data will not be parsed due to the unbuffered channel
 		responses: make(chan vtp.Message),
 		transport: transport,
 	}

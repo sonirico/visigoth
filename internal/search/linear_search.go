@@ -71,5 +71,7 @@ func LinearSearchEngine(tokens []string, indexable Indexer) entities.Iterator {
 			}
 		}
 	}
-	return container.NewResultIterator(linearSearchResult{indexes: indexedGroup, indexer: indexable})
+	return container.NewResultIterator(
+		linearSearchResult{indexes: indexedGroup, indexer: indexable},
+	)
 }

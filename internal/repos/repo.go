@@ -161,7 +161,11 @@ func (h *indexRepo) Rename(old string, new string) bool {
 	return true
 }
 
-func (h *indexRepo) Search(indexName string, terms string, engine search.Engine) (entities.Iterator, error) {
+func (h *indexRepo) Search(
+	indexName string,
+	terms string,
+	engine search.Engine,
+) (entities.Iterator, error) {
 	indices, ok := h.getIndices(indexName)
 	if !ok {
 		return nil, fmt.Errorf("index with name '%s' does not exist", indexName)

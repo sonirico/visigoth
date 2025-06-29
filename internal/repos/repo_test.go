@@ -147,7 +147,11 @@ func Test_IndexRepo_HotSwap(t *testing.T) {
 	repo.Alias("dedos:latest", "dedos_v2")
 	r, err := repo.Search("dedos:latest", "zampo", search.NoopAllSearchEngine)
 	if err != nil {
-		t.Errorf("unexpected error. want search by alias return result, have error %s %s", err.Error(), r)
+		t.Errorf(
+			"unexpected error. want search by alias return result, have error %s %s",
+			err.Error(),
+			r,
+		)
 		return
 	}
 }

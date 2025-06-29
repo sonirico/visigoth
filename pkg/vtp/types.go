@@ -11,7 +11,7 @@ const (
 )
 
 type Type interface {
-	Type() Type
+	Type() MetaType
 	Len() int
 }
 

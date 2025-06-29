@@ -121,7 +121,11 @@ func (p *BytesParser) ParseLongTextType(src io.Reader) (*StringType, error) {
 	return &StringType{Value: str}, err
 }
 
-func ParseListIndicesResponse(head *Head, src io.Reader, parser Parser) (*ListIndicesResponse, error) {
+func ParseListIndicesResponse(
+	head *Head,
+	src io.Reader,
+	parser Parser,
+) (*ListIndicesResponse, error) {
 	totalRead, err := parser.ParseUInt32(src)
 	if err != nil {
 		return nil, err
@@ -191,7 +195,11 @@ func ParseSearchResponse(head *Head, src io.Reader, parser Parser) (*HitsSearchR
 	}
 }
 
-func ParseHitsSearchResponse(head *Head, src io.Reader, parser Parser) (*HitsSearchResponse, error) {
+func ParseHitsSearchResponse(
+	head *Head,
+	src io.Reader,
+	parser Parser,
+) (*HitsSearchResponse, error) {
 	count, err := parser.ParseUInt32(src)
 	if err != nil {
 		return nil, err
@@ -288,7 +296,11 @@ func ParseListAliasesRequest(head *Head) (*ListAliasesRequest, error) {
 	return &ListAliasesRequest{Head: head}, nil
 }
 
-func ParseListAliasesResponse(head *Head, src io.Reader, parser ProtoParser) (*ListAliasesResponse, error) {
+func ParseListAliasesResponse(
+	head *Head,
+	src io.Reader,
+	parser ProtoParser,
+) (*ListAliasesResponse, error) {
 	aliasesCount, err := parser.ParseUInt32(src)
 	if err != nil {
 		return nil, err
@@ -381,7 +393,12 @@ func Parse(src io.Reader, parser ProtoParser) (Message, error) {
 	return ParseBody(src, head, parser)
 }
 
-func ParseStream(ctx context.Context, src io.Reader, parser ProtoParser, queue chan<- Message) error {
+func ParseStream(
+	ctx context.Context,
+	src io.Reader,
+	parser ProtoParser,
+	queue chan<- Message,
+) error {
 	for {
 		select {
 		case <-ctx.Done():

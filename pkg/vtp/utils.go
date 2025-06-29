@@ -40,7 +40,12 @@ func NewListIndicesRequest(id uint64, version uint8) *ListIndicesRequest {
 	}
 }
 
-func NewIndexRequest(id uint64, version uint8, index, name, payload string, format entities.MimeType) *IndexRequest {
+func NewIndexRequest(
+	id uint64,
+	version uint8,
+	index, name, payload string,
+	format entities.MimeType,
+) *IndexRequest {
 	return &IndexRequest{
 		Head: &Head{
 			id:          &UInt64Type{id},

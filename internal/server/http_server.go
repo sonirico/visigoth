@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -73,7 +73,7 @@ func (s *APIController) handleAlias(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		payload := new(AliasRequestPayload)
-		body, _ := ioutil.ReadAll(r.Body)
+		body, _ := io.ReadAll(r.Body)
 		if err := json.Unmarshal(body, payload); err != nil {
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			return
@@ -173,7 +173,7 @@ func (s *APIController) handleIndex(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		payload := new(PutRequestPayload)
-		body, _ := ioutil.ReadAll(r.Body) // TODO: Streaming
+		body, _ := io.ReadAll(r.Body) // TODO: Streaming
 		if err := json.Unmarshal(body, payload); err != nil {
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			return

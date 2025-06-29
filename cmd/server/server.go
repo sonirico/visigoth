@@ -42,11 +42,14 @@ func main() {
 	signal.Notify(signals, syscall.SIGTERM, os.Interrupt)
 	ctx, cancel := context.WithCancel(context.Background())
 	tokenizer := analyze.NewKeepAlphanumericTokenizer()
-	analyzer := analyze.NewTokenizationPipeline(&tokenizer,
+	analyzer := analyze.NewTokenizationPipeline(
+		&tokenizer,
 		analyze.NewLowerCaseTokenizer(),
 		analyze.NewStopWordsFilter(analyze.SpanishStopWords),
-		analyze.NewSpanishStemmer(true))
+		analyze.NewSpanishStemmer(true),
+	)
 	repo := repos.NewIndexRepo(vindex.NewMemoryIndexBuilder(&analyzer))
+
 	node := server.NewNode(repo)
 	transporter := server.NewVTPTransport()
 	tcpServer := server.NewTCPServer(bindToTCP, node, transporter)

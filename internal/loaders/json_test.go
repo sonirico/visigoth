@@ -6,7 +6,10 @@ import (
 	"testing"
 )
 
-func assertAllTokensInString(t *testing.T, actual, expectedTokens string) (expectedButNotPresent []string, ok bool) {
+func assertAllTokensInString(
+	t *testing.T,
+	actual, expectedTokens string,
+) (expectedButNotPresent []string, ok bool) {
 	t.Helper()
 
 	ok = true
