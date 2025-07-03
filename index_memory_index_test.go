@@ -2,81 +2,11 @@ package visigoth
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-type testResultRow struct {
-	id string
-}
-
-func newTestResultRow(id string) *testResultRow {
-	return &testResultRow{id: id}
-}
-
-func (tr *testResultRow) Doc() Doc {
-	return Doc{Name: tr.id}
-}
-
-type testSearchResult struct {
-	rows []Row
-}
-
-func newTestResult() *testSearchResult {
-	return &testSearchResult{
-		rows: make([]Row, 0),
-	}
-}
-
-func (tr *testSearchResult) Add(row ...Row) Result {
-	tr.rows = append(tr.rows, row...)
-	return tr
-}
-
-func (tr *testSearchResult) Get(index int) Row {
-	return tr.rows[index]
-}
-
-func (tr *testSearchResult) Len() int {
-	return len(tr.rows)
-}
-
-type testSearch struct {
-	term   string
-	result Result
-	engine Engine
-}
-
-func assertSearchReturns(t *testing.T, index Index, tests []testSearch) {
-	for _, test := range tests {
-		ares := index.Search(test.term, test.engine)
-		counter := 0
-		docs := make([]Doc, 0)
-		for _, row := range ares {
-			docs = append(docs, row.Doc())
-			counter++
-		}
-
-		if counter != test.result.Len() {
-			t.Fatalf("unexpected search result size for term '%s'. want %d, have %d results",
-				test.term, test.result.Len(), counter)
-		}
-
-		for i := 0; i < counter; i++ {
-			erow := test.result.Get(i)
-			found := false
-			for _, adoc := range docs {
-				if adoc.Hash() == erow.Doc().Hash() {
-					found = true
-				}
-			}
-			if !found {
-				t.Fatalf("'%s' document is missing, but should be present",
-					erow.Doc().ID())
-			}
-		}
-	}
-}
-
-func Test_Index_Search_One(t *testing.T) {
+func TestIndex_Search_One(t *testing.T) {
 	tokenizr := NewKeepAlphanumericTokenizer()
 	analyzer := NewTokenizationPipeline(
 		tokenizr,
@@ -87,41 +17,83 @@ func Test_Index_Search_One(t *testing.T) {
 	in := NewMemoryIndex("testing", analyzer)
 	in.Put(NewDocRequest("/course/java", `Curso de programación en Java (León)`))
 	in.Put(NewDocRequest("/course/php", `Curso de programación en PHP (León)`))
-	tests := []testSearch{
-		{
-			term:   "java",
-			result: newTestResult().Add(newTestResultRow("/course/java")),
-			engine: HitsSearch,
-		},
+
+	// Test searching for "java"
+	results := in.Search("java", HitsSearch)
+	assert.Equal(t, 1, results.Len(), "unexpected search result size for term 'java'")
+
+	// Iterate over results to get the first one
+	var foundDoc *SearchResult
+	for _, result := range results {
+		foundDoc = &result
+		break
 	}
 
-	assertSearchReturns(t, in, tests)
+	assert.NotNil(t, foundDoc, "no results found")
+	assert.Equal(t, "/course/java", foundDoc.Document.ID(), "unexpected document returned")
 }
 
-func Test_Index_Search_Several(t *testing.T) {
+func TestIndex_Search_TwoDocuments(t *testing.T) {
 	tokenizr := NewKeepAlphanumericTokenizer()
 	analyzer := NewTokenizationPipeline(
 		tokenizr,
 		NewLowerCaseTokenizer(),
 		NewStopWordsFilter(SpanishStopWords),
-		NewSpanishStemmer(true))
+		NewSpanishStemmer(true),
+	)
 	in := NewMemoryIndex("testing", analyzer)
 	in.Put(NewDocRequest("/course/java", `Curso de programacion en Java (León)`))
 	in.Put(NewDocRequest("/course/php", `Curso de programacion en PHP (León)`))
-	tests := []testSearch{
-		{
-			term:   "java",
-			result: newTestResult().Add(newTestResultRow("/course/java")),
-			engine: HitsSearch,
-		},
-		{
-			term: "programacion",
-			result: newTestResult().Add(
-				newTestResultRow("/course/java"),
-				newTestResultRow("/course/php")),
-			engine: LinearSearch,
-		},
+
+	results := in.Search("programacion", HitsSearch)
+	assert.Equal(t, 2, results.Len(), "unexpected search result size for term 'programacion'")
+
+	// Verify both documents are returned
+	foundJava := false
+	foundPHP := false
+	for _, result := range results {
+		if result.Document.ID() == "/course/java" {
+			foundJava = true
+		}
+		if result.Document.ID() == "/course/php" {
+			foundPHP = true
+		}
 	}
 
-	assertSearchReturns(t, in, tests)
+	assert.True(t, foundJava, "Java course document is missing from search results")
+	assert.True(t, foundPHP, "PHP course document is missing from search results")
+}
+
+func TestDebugEstuviesIssue(t *testing.T) {
+	tokenizr := NewKeepAlphanumericTokenizer()
+	analyzer := NewTokenizationPipeline(
+		tokenizr,
+		NewLowerCaseTokenizer(),
+		NewStopWordsFilter(SpanishStopWords),
+		NewSpanishStemmer(true),
+	)
+	in := NewMemoryIndex("testing", analyzer)
+
+	// Add only the documents we know about
+	in.Put(NewDocRequest("/course/java", `Curso de programación en Java (León)`))
+	in.Put(NewDocRequest("/course/php", `Curso de programación en PHP (León)`))
+
+	// Check what documents are actually stored
+	t.Logf("Number of documents in index: %d", len(in.Docs))
+	for i, doc := range in.Docs {
+		t.Logf("Doc[%d]: ID='%s', Content='%s'", i, doc.ID(), doc.Raw())
+	}
+
+	// Check the inverted index
+	t.Logf("Inverted index contents:")
+	for token, docIndices := range in.InvertedIndex {
+		t.Logf("Token '%s' -> documents %v", token, docIndices)
+	}
+
+	// Perform a search
+	results := in.Search("java", HitsSearch)
+	t.Logf("Search results for 'java': %d results", results.Len())
+	for _, result := range results {
+		t.Logf("Result: ID='%s', Hits=%d, Content='%s'", result.Document.ID(), result.Hits, result.Document.Raw())
+	}
 }

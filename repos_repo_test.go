@@ -2,6 +2,8 @@ package visigoth
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func newTestIndexRepo() Repo {
@@ -18,9 +20,8 @@ func Test_IndexRepo_Alias_Index_Exists(t *testing.T) {
 	repo.Put("dedos", NewDocRequest("pulgar", "este fue a por huevos"))
 	repo.Put("colores", NewDocRequest("naranjito", "este es del 92"))
 
-	if ok := repo.Alias("dedos:latest", "dedos"); !ok {
-		t.Errorf("alias failed. want alias created, have otherwise")
-	}
+	ok := repo.Alias("dedos:latest", "dedos")
+	assert.True(t, ok, "alias should be created successfully")
 }
 
 func Test_IndexRepo_Alias_Index_DoesNotExist(t *testing.T) {
@@ -29,9 +30,8 @@ func Test_IndexRepo_Alias_Index_DoesNotExist(t *testing.T) {
 	repo.Put("dedos", NewDocRequest("pulgar", "este fue a por huevos"))
 	repo.Put("colores", NewDocRequest("naranjito", "este es del 92"))
 
-	if ok := repo.Alias("dedos:latest", "sabores"); ok {
-		t.Errorf("alias failed. want alias not created, have otherwise")
-	}
+	ok := repo.Alias("dedos:latest", "sabores")
+	assert.False(t, ok, "alias should not be created for non-existent index")
 }
 
 func Test_IndexRepo_UnAlias_All_Alias_Exists(t *testing.T) {
@@ -40,9 +40,8 @@ func Test_IndexRepo_UnAlias_All_Alias_Exists(t *testing.T) {
 	repo.Put("dedos", NewDocRequest("pulgar", "este fue a por huevos"))
 	repo.Alias("dedos:latest", "dedos")
 
-	if ok := repo.UnAlias("dedos:latest", ""); !ok {
-		t.Errorf("alias failed. alias should exist, have otherwise")
-	}
+	ok := repo.UnAlias("dedos:latest", "")
+	assert.True(t, ok, "alias should exist and be removed successfully")
 }
 
 func Test_IndexRepo_UnAlias_All_Alias_DoesNotExist(t *testing.T) {
@@ -50,9 +49,8 @@ func Test_IndexRepo_UnAlias_All_Alias_DoesNotExist(t *testing.T) {
 
 	repo.Put("dedos", NewDocRequest("pulgar", "este fue a por huevos"))
 
-	if ok := repo.UnAlias("dedos:latest", ""); ok {
-		t.Errorf("alias failed. received alias that should not exist, have otherwise")
-	}
+	ok := repo.UnAlias("dedos:latest", "")
+	assert.False(t, ok, "alias should not exist")
 }
 
 func Test_IndexRepo_Search_By_Alias(t *testing.T) {
@@ -60,10 +58,9 @@ func Test_IndexRepo_Search_By_Alias(t *testing.T) {
 
 	repo.Put("dedos", NewDocRequest("pulgar", "este fue a por huevos"))
 	repo.Alias("dedos:latest", "dedos")
+
 	_, err := repo.Search("dedos:latest", "huevos", NoopAllSearch)
-	if err != nil {
-		t.Errorf("unexpected error. want search by alias return result, have error %s", err)
-	}
+	assert.NoError(t, err, "search by alias should return result without error")
 }
 
 func Test_IndexRepo_Search_By_AliasSeveralPointedIndices(t *testing.T) {
@@ -72,10 +69,10 @@ func Test_IndexRepo_Search_By_AliasSeveralPointedIndices(t *testing.T) {
 	repo.Put("comida", NewDocRequest("huevos", "los huevos son cuerpos redondeados"))
 	repo.Alias("huevos:latest", "dedos")
 	repo.Alias("huevos:latest", "comida")
+
 	res, err := repo.Search("huevos:latest", "huevos", HitsSearch)
-	if err != nil {
-		t.Errorf("unexpected error. want search by alias return result, have error %s", err)
-	}
+	assert.NoError(t, err, "search by alias should return result without error")
+
 	expectedDocuments := map[string]bool{"pulgar": false, "huevos": false}
 	for res.Next() {
 		item := res.Data()
@@ -83,10 +80,9 @@ func Test_IndexRepo_Search_By_AliasSeveralPointedIndices(t *testing.T) {
 		_, ok := expectedDocuments[doc]
 		expectedDocuments[doc] = ok
 	}
-	for index, ok := range expectedDocuments {
-		if !ok {
-			t.Errorf("expected document '%s' to be seen in result", index)
-		}
+
+	for index, found := range expectedDocuments {
+		assert.True(t, found, "expected document '%s' to be seen in result", index)
 	}
 }
 
@@ -95,36 +91,30 @@ func Test_IndexRepo_Put_By_Alias(t *testing.T) {
 	repo.Put("dedos", NewDocRequest("pulgar", "este fue a por huevos"))
 	repo.Alias("dedos:latest", "dedos")
 	repo.Put("dedos:latest", NewDocRequest("indice", "y este los casco"))
+
 	_, err := repo.Search("dedos:latest", "casco", NoopAllSearch)
-	if err != nil {
-		t.Errorf("unexpected error. want search by alias return result, have error %s", err.Error())
-		return
-	}
+	assert.NoError(t, err, "search by alias should return result without error")
 }
 
 func Test_IndexRepo_Rename_IndexExists(t *testing.T) {
 	repo := newTestIndexRepo()
 	repo.Put("dedos", NewDocRequest("pulgar", "este fue a por huevos"))
 	repo.Alias("dedos:latest", "dedos")
-	if ok := repo.Rename("dedos", "dedos_v2"); !ok {
-		t.Errorf("expected index 'dedos' to exist")
-		return
-	}
+
+	ok := repo.Rename("dedos", "dedos_v2")
+	assert.True(t, ok, "expected index 'dedos' to exist and be renamed")
+
 	_, err := repo.Search("dedos:latest", "huevos", NoopAllSearch)
-	if err != nil {
-		t.Errorf("unexpected error. want search by alias return result, have error %s", err.Error())
-		return
-	}
+	assert.NoError(t, err, "search by alias should return result without error")
 }
 
 func Test_IndexRepo_Rename_IndexDoesNotExist(t *testing.T) {
 	repo := newTestIndexRepo()
 	repo.Put("dedos", NewDocRequest("pulgar", "este fue a por huevos"))
 	repo.Alias("dedos:latest", "dedos")
-	if ok := repo.Rename("deditos", "dedos_v2"); ok {
-		t.Errorf("expected index 'deditos' to be non-existent")
-		return
-	}
+
+	ok := repo.Rename("deditos", "dedos_v2")
+	assert.False(t, ok, "expected index 'deditos' to be non-existent")
 }
 
 func Test_IndexRepo_HotSwap(t *testing.T) {
@@ -133,48 +123,38 @@ func Test_IndexRepo_HotSwap(t *testing.T) {
 	repo.Alias("dedos:latest", "dedos")
 	repo.Put("dedos_v2", NewDocRequest("menique", "este los zampo"))
 	repo.Alias("dedos:latest", "dedos_v2")
+
 	r, err := repo.Search("dedos:latest", "zampo", NoopAllSearch)
-	if err != nil {
-		t.Errorf(
-			"unexpected error. want search by alias return result, have error %s %s",
-			err.Error(),
-			r,
-		)
-		return
-	}
+	assert.NoError(t, err, "search by alias should return result without error")
+	assert.NotNil(t, r, "result should not be nil")
 }
 
 func Test_IndexRepo_Drop_IndexExists(t *testing.T) {
 	repo := newTestIndexRepo()
 	repo.Put("dedos", NewDocRequest("pulgar", "este fue a por huevos"))
-	if ok := repo.Drop("dedos"); !ok {
-		t.Errorf("expected index 'dedos' to exist")
-		return
-	}
-	if repo.Has("dedos") {
-		t.Errorf("unexpected drop result. expected '%s' to have been dropped, but wasn't", "dedos")
-		return
-	}
+
+	ok := repo.Drop("dedos")
+	assert.True(t, ok, "expected index 'dedos' to exist and be dropped")
+
+	hasIndex := repo.Has("dedos")
+	assert.False(t, hasIndex, "expected 'dedos' to have been dropped")
 }
 
 func Test_IndexRepo_Drop_IndexDoesNotExist(t *testing.T) {
 	repo := newTestIndexRepo()
-	if ok := repo.Drop("dedos"); ok {
-		t.Errorf("expected index 'dedos' to have been erased")
-		return
-	}
+
+	ok := repo.Drop("dedos")
+	assert.False(t, ok, "expected index 'dedos' to not exist")
 }
 
 func Test_IndexRepo_Drop_IndexWithAliasExists_ShouldDropAlias(t *testing.T) {
 	repo := newTestIndexRepo()
 	repo.Put("dedos", NewDocRequest("pulgar", "este fue a por huevos"))
 	repo.Alias("dedos:latest", "dedos")
-	if ok := repo.Drop("dedos"); !ok {
-		t.Errorf("expected index 'dedos' to have been dropped")
-		return
-	}
-	if repo.HasAlias("dedos:latest") {
-		t.Errorf("expected alias '%s' to have been erased too", "dedos:latest")
-		return
-	}
+
+	ok := repo.Drop("dedos")
+	assert.True(t, ok, "expected index 'dedos' to have been dropped")
+
+	hasAlias := repo.HasAlias("dedos:latest")
+	assert.False(t, hasAlias, "expected alias 'dedos:latest' to have been erased too")
 }

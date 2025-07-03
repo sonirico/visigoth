@@ -44,7 +44,7 @@ type IndexRepo struct {
 func (h *IndexRepo) List() []string {
 	h.indicesMu.RLock()
 	defer h.indicesMu.RUnlock()
-	indices := make([]string, len(h.indices), len(h.indices))
+	indices := make([]string, len(h.indices))
 	i := 0
 	for iname := range h.indices {
 		indices[i] = iname
@@ -254,7 +254,7 @@ func (h *IndexRepo) Drop(indexName string) bool {
 
 func (h *IndexRepo) ListAliases() AliasesResult {
 	h.aliasesMu.RLock()
-	aliases := make([]AliasesResultRow, len(h.aliases), len(h.aliases))
+	aliases := make([]AliasesResultRow, len(h.aliases))
 	i := 0
 	for k, v := range h.aliases {
 		aliases[i] = AliasesResultRow{Alias: k, Indices: v}
@@ -282,7 +282,7 @@ func (h *IndexRepo) getIndices(name string) ([]Index, bool) {
 	}
 	res := make([]Index, len(aliasedIndices))
 	for i, index := range aliasedIndices {
-		res[i], _ = h.indices[index]
+		res[i] = h.indices[index]
 	}
 	h.indicesMu.RUnlock()
 	h.aliasesMu.RUnlock()

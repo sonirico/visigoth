@@ -87,6 +87,11 @@ run-client:
 	$(info Make: Run client)
 	go run cmd/cmd_client.go
 
+.PHONY: generate
+generate:
+	$(info Make: Generate code)
+	go generate ./...
+
 .PHONY: setup
 setup:
 	$(info Make: Setup development environment)

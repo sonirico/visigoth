@@ -41,7 +41,7 @@ func (mi *MemoryIndex) String() string {
 	return buf.String()
 }
 
-func (mi *MemoryIndex) Put(payload indexable) Index {
+func (mi *MemoryIndex) Put(payload DocRequest) Index {
 	tokens := mi.tokenizer.Tokenize(payload.Statement())
 	next := len(mi.Docs)
 	newDoc := NewDoc(payload.ID(), payload.Raw())

@@ -1,5 +1,8 @@
 package visigoth
 
+//go:generate easyjson
+
+//easyjson:json
 type SearchResult struct {
 	Document Doc `json:"doc"`
 	Hits     int `json:"hits"`

@@ -18,5 +18,5 @@ type Indexer interface {
 	Document(index int) Doc
 }
 
-// Engine defines the interface for search functions
+// Engine defines the function signature for search functions
 type Engine func(tokens []string, indexable Indexer) slices.Slice[SearchResult]

@@ -6,15 +6,8 @@ type tokenizer interface {
 	Tokenize(text string) []string
 }
 
-type indexable interface {
-	ID() string
-	Raw() string // The original content of the payload
-	Mime() MimeType
-	Statement() string
-}
-
 type Index interface {
-	Put(Doc indexable) Index
+	Put(payload DocRequest) Index
 	Search(terms string, engine Engine) slices.Slice[SearchResult]
 }
 
