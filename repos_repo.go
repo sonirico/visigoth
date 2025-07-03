@@ -164,15 +164,32 @@ func (h *IndexRepo) Search(
 	terms string,
 	engine Engine,
 ) (streams.ReadStream[SearchResult], error) {
-	indices, ok := h.getIndices(indexName)
-	if !ok {
-		return nil, fmt.Errorf("index with name '%s' does not exist", indexName)
+	h.indicesMu.RLock()
+	defer h.indicesMu.RUnlock()
+
+	// Get indices while holding the lock
+	var indices []Index
+
+	// 1. Search on indices directly
+	if in, ok := h.indices[indexName]; ok {
+		indices = []Index{in}
+	} else {
+		// 2. If not found, search on aliases
+		h.aliasesMu.RLock()
+		aliasedIndices, ok := h.aliases[indexName]
+		if !ok {
+			h.aliasesMu.RUnlock()
+			return nil, fmt.Errorf("index with name '%s' does not exist", indexName)
+		}
+		indices = make([]Index, len(aliasedIndices))
+		for i, index := range aliasedIndices {
+			indices[i] = h.indices[index]
+		}
+		h.aliasesMu.RUnlock()
 	}
 
-	h.indicesMu.RLock()
 	if len(indices) == 1 {
 		sr := indices[0].Search(terms, engine)
-		h.indicesMu.RUnlock()
 		return streams.MemReader(sr, nil), nil
 	}
 
@@ -185,15 +202,14 @@ func (h *IndexRepo) Search(
 	rl := new(sync.Mutex)
 	for _, index := range indices {
 		go func(idx Index) {
-			rl.Lock()
+			defer wg.Done()
 			sr := idx.Search(terms, engine)
+			rl.Lock()
 			result.AppendVector(sr)
 			rl.Unlock()
-			wg.Done()
 		}(index)
 	}
 	wg.Wait()
-	h.indicesMu.RUnlock()
 	return streams.MemReader(result, nil), nil
 }
 
@@ -236,7 +252,7 @@ func (h *IndexRepo) Drop(indexName string) bool {
 		var newIndices []string
 		for _, aliasedIndexName := range indices {
 			if aliasedIndexName != indexName {
-				newIndices = append(newIndices, indexName)
+				newIndices = append(newIndices, aliasedIndexName)
 			}
 		}
 		if len(newIndices) < 1 {

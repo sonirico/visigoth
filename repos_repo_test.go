@@ -158,3 +158,39 @@ func Test_IndexRepo_Drop_IndexWithAliasExists_ShouldDropAlias(t *testing.T) {
 	hasAlias := repo.HasAlias("dedos:latest")
 	assert.False(t, hasAlias, "expected alias 'dedos:latest' to have been erased too")
 }
+
+func Test_IndexRepo_Search_Deterministic(t *testing.T) {
+	repo := newTestIndexRepo()
+
+	// Add multiple documents to the same index
+	repo.Put("courses", NewDocRequest("java-course", "programming course java"))
+	repo.Put("courses", NewDocRequest("python-course", "programming course python"))
+	repo.Put("courses", NewDocRequest("go-course", "programming course golang"))
+	repo.Put("courses", NewDocRequest("js-course", "programming course javascript"))
+
+	// Run the same search multiple times to verify deterministic results
+	var allResults [][]string
+
+	for i := 0; i < 5; i++ {
+		stream, err := repo.Search("courses", "programming", HitsSearch)
+		assert.NoError(t, err)
+
+		var docIDs []string
+		for stream.Next() {
+			result := stream.Data()
+			docIDs = append(docIDs, result.Document.ID())
+		}
+
+		allResults = append(allResults, docIDs)
+	}
+
+	// Verify all runs produced the same results in the same order
+	firstResult := allResults[0]
+	for i := 1; i < len(allResults); i++ {
+		assert.Equal(t, firstResult, allResults[i],
+			"Repo search results should be deterministic across multiple runs")
+	}
+
+	// Verify we got all expected documents
+	assert.Len(t, firstResult, 4, "Should find all 4 documents")
+}

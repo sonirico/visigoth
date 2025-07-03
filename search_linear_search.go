@@ -2,7 +2,13 @@ package visigoth
 
 import "github.com/sonirico/vago/slices"
 
-// intersection returns the elements in common between two slices. Considers that they have been previously sorted ASC
+// intersection returns the elements in common between two sorted slices.
+// This function assumes both input slices are sorted in ascending order.
+// It uses a two-pointer technique to find the intersection in O(n+m) time complexity.
+//
+// Example:
+//
+//	intersection([1, 3, 5, 7], [3, 5, 8, 9]) = [3, 5]
 func intersection(a []int, b []int) []int {
 	maxLen := len(a)
 	if len(b) > maxLen {
@@ -24,7 +30,31 @@ func intersection(a []int, b []int) []int {
 	return r
 }
 
-// LinearSearch performs a linear search and returns results directly
+// LinearSearch performs an intersection-based search across all query tokens.
+//
+// Algorithm:
+// 1. For each token in the query, get the list of documents that contain it
+// 2. Find the intersection of all these document lists (documents that contain ALL tokens)
+// 3. Return only documents that contain every single token in the query
+//
+// Key characteristics:
+// - Uses AND logic: ALL tokens must be present in a document for it to match
+// - Same logic as HitsSearch but different algorithm (intersection vs. hit counting)
+// - Results have Hits = len(tokens) since all tokens are guaranteed to be found
+// - More efficient for queries with many tokens due to early termination
+// - Deterministic order based on document index order
+//
+// Comparison with HitsSearch:
+// - Both implement AND logic (only documents with ALL tokens are returned)
+// - LinearSearch: Uses set intersection operations (more efficient for large queries)
+// - HitsSearch: Uses hit counting with threshold filtering (more flexible for scoring)
+//
+// Example:
+//
+//	Query: "programming java"
+//	- Only returns documents that contain BOTH "programming" AND "java"
+//	- A document with only "programming" will NOT be returned
+//	- A document with only "java" will NOT be returned
 func LinearSearch(tokens []string, indexable Indexer) slices.Slice[SearchResult] {
 	if len(tokens) == 0 {
 		return nil

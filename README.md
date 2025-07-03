@@ -104,6 +104,71 @@ The package is organized into focused components:
 - **loaders** - Document loading utilities
 - **entities** - Core data structures
 
+## Search Algorithms
+
+Visigoth provides two main search algorithms, both implementing AND logic (all query tokens must be present in matching documents):
+
+### HitsSearch vs LinearSearch
+
+| Feature                    | HitsSearch                                   | LinearSearch                  |
+| -------------------------- | -------------------------------------------- | ----------------------------- |
+| **Algorithm**              | Hit counting + threshold filtering           | Set intersection              |
+| **Time Complexity**        | O(T × D + R log R)                           | O(T × D + I)                  |
+| **Space Complexity**       | O(R)                                         | O(I)                          |
+| **Result Ordering**        | Relevance-based (hit count) + document order | Document index order          |
+| **Best For**               | Relevance ranking, scoring                   | Boolean matching, performance |
+| **Multi-token Efficiency** | Constant per token                           | Early termination possible    |
+
+Where:
+- T = number of search tokens
+- D = average documents per token  
+- R = number of matching documents
+- I = size of intersection sets
+
+### Algorithm Details
+
+#### HitsSearch
+```go
+// Uses hit counting to rank results by relevance
+results := HitsSearch([]string{"programming", "tutorial"}, indexer)
+// Returns documents sorted by relevance (most matching tokens first)
+```
+
+**Process:**
+1. Count hits (unique tokens) per document
+2. Filter documents with hits ≥ threshold (AND logic)
+3. Sort by hit count (relevance), then by document order (determinism)
+
+**Best for:**
+- ✅ Relevance ranking needed
+- ✅ User expects "best matches first"
+- ✅ Flexible scoring systems
+- ✅ Apps with ranked suggestions
+
+#### LinearSearch
+```go
+// Uses set intersection for exact boolean matching
+results := LinearSearch([]string{"programming", "tutorial"}, indexer)
+// Returns documents in document index order
+```
+
+**Process:**
+1. Get document sets for each token
+2. Compute intersection of all sets (AND logic)  
+3. Return matches in document index order
+
+**Best for:**
+- ✅ Pure boolean matching
+- ✅ Performance-critical applications
+- ✅ Large queries (many tokens)
+- ✅ Consistent ordering needed
+
+## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+Please make sure to update tests as appropriate.
+
 ## License
 
-Licensed under the [MIT License](LICENSE).
+[MIT](LICENSE)

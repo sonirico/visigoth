@@ -39,8 +39,9 @@ func NewDocRequestWith(name, content, statement string) DocRequest {
 
 func NewDocRequestWithMime(name, content string, mime MimeType) DocRequest {
 	return DocRequest{
-		Name:     name,
-		Content:  content,
-		MimeType: mime,
+		Name:      name,
+		Content:   content,
+		MimeType:  mime,
+		statement: content,
 	}
 }

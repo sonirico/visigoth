@@ -64,7 +64,7 @@ func TestIndex_Search_TwoDocuments(t *testing.T) {
 	assert.True(t, foundPHP, "PHP course document is missing from search results")
 }
 
-func TestDebugEstuviesIssue(t *testing.T) {
+func TestIndex_Search_Deterministic(t *testing.T) {
 	tokenizr := NewKeepAlphanumericTokenizer()
 	analyzer := NewTokenizationPipeline(
 		tokenizr,
@@ -74,26 +74,37 @@ func TestDebugEstuviesIssue(t *testing.T) {
 	)
 	in := NewMemoryIndex("testing", analyzer)
 
-	// Add only the documents we know about
-	in.Put(NewDocRequest("/course/java", `Curso de programación en Java (León)`))
-	in.Put(NewDocRequest("/course/php", `Curso de programación en PHP (León)`))
+	// Add multiple documents that will all match the search term
+	in.Put(NewDocRequest("java-course", "programming course java"))
+	in.Put(NewDocRequest("python-course", "programming course python"))
+	in.Put(NewDocRequest("go-course", "programming course golang"))
+	in.Put(NewDocRequest("js-course", "programming course javascript"))
 
-	// Check what documents are actually stored
-	t.Logf("Number of documents in index: %d", len(in.Docs))
-	for i, doc := range in.Docs {
-		t.Logf("Doc[%d]: ID='%s', Content='%s'", i, doc.ID(), doc.Raw())
+	// Run the same search multiple times to verify deterministic results
+	var allResults [][]string
+
+	for i := 0; i < 5; i++ {
+		results := in.Search("programming", HitsSearch)
+
+		var docIDs []string
+		for _, result := range results {
+			docIDs = append(docIDs, result.Document.ID())
+		}
+
+		allResults = append(allResults, docIDs)
 	}
 
-	// Check the inverted index
-	t.Logf("Inverted index contents:")
-	for token, docIndices := range in.InvertedIndex {
-		t.Logf("Token '%s' -> documents %v", token, docIndices)
+	// Verify all runs produced the same results in the same order
+	firstResult := allResults[0]
+	for i := 1; i < len(allResults); i++ {
+		assert.Equal(t, firstResult, allResults[i],
+			"Search results should be deterministic across multiple runs")
 	}
 
-	// Perform a search
-	results := in.Search("java", HitsSearch)
-	t.Logf("Search results for 'java': %d results", results.Len())
-	for _, result := range results {
-		t.Logf("Result: ID='%s', Hits=%d, Content='%s'", result.Document.ID(), result.Hits, result.Document.Raw())
-	}
+	// Verify we got all expected documents
+	assert.Len(t, firstResult, 4, "Should find all 4 documents")
+	assert.Contains(t, firstResult, "java-course")
+	assert.Contains(t, firstResult, "python-course")
+	assert.Contains(t, firstResult, "go-course")
+	assert.Contains(t, firstResult, "js-course")
 }

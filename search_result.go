@@ -29,7 +29,12 @@ func (r SearchResults) Len() int {
 }
 
 func (r SearchResults) Less(i, j int) bool {
-	return r[i].Hits > r[j].Hits
+	// Primary sort: by hits (descending)
+	if r[i].Hits != r[j].Hits {
+		return r[i].Hits > r[j].Hits
+	}
+	// Secondary sort: by document ID (ascending) for deterministic ordering
+	return r[i].Document.ID() < r[j].Document.ID()
 }
 
 func (r SearchResults) Swap(i, j int) {
