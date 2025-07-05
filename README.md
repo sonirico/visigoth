@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="visigoth.png" alt="Visigoth" width="200"/>
+  <img src="visigoth.gif" alt="Visigoth" width="200"/>
   
   # Visigoth
   
